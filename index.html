@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Logo Anahtarlık Fabrikası</title>
-    <!-- Three.js ve OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
@@ -36,10 +35,10 @@
         <label for="logoSelect">Hazır Logo Seç:</label>
         <select id="logoSelect" onchange="loadPresetLogo()" style="width: 100%; text-align: left;">
             <option value="tesla">Tesla Logo</option>
-            <option value="bmw">BMW Logo (Daire)</option>
-            <option value="ford">Ford Logo (Oval)</option>
-            <option value="audi">Audi Logo (Halkalar)</option>
-            <option value="mercedes">Mercedes Logo (Yıldız)</option>
+            <option value="bmw">BMW Logo</option>
+            <option value="ford">Ford Logo</option>
+            <option value="audi">Audi Logo</option>
+            <option value="mercedes">Mercedes Logo</option>
         </select>
     </div>
 
@@ -80,13 +79,13 @@
     let currentSvgShapes = null;
     let currentLogoName = "tesla";
 
-    // Hazır SVG Logo Verileri (Kodun içinde gömülü vektörler)
+    // Tamamen optimize edilmiş ve SVGLoader uyumlu SVG formatları
     const presetLogos = {
-        tesla: '<svg viewBox="0 0 300 300"><path d="M150,20 C150,20 180,60 220,70 C220,70 170,80 150,150 C130,80 80,70 80,70 C120,60 150,20 150,20 Z" fill="black"/><path d="M70,30 L230,30 L230,45 L70,45 Z" fill="black"/></svg>',
-        bmw: '<svg viewBox="0 0 300 300"><circle cx="150" cy="150" r="130" fill="black"/><circle cx="150" cy="150" r="115" fill="white"/><path d="M150,35 A115,115 0 0,1 265,150 L150,150 Z" fill="blue"/><path d="M150,265 A115,115 0 0,1 35,150 L150,150 Z" fill="blue"/></svg>',
-        ford: '<svg viewBox="0 0 300 150"><ellipse cx="150" cy="75" rx="140" ry="65" fill="blue"/><ellipse cx="150" cy="75" rx="125" ry="52" fill="none" stroke="white" stroke-width="6"/></svg>',
-        audi: '<svg viewBox="0 0 400 150"><circle cx="80" cy="75" r="50" fill="none" stroke="black" stroke-width="12"/><circle cx="160" cy="75" r="50" fill="none" stroke="black" stroke-width="12"/><circle cx="240" cy="75" r="50" fill="none" stroke="black" stroke-width="12"/><circle cx="320" cy="75" r="50" fill="none" stroke="black" stroke-width="12"/></svg>',
-        mercedes: '<svg viewBox="0 0 300 300"><circle cx="150" cy="150" r="130" fill="none" stroke="black" stroke-width="12"/><polygon points="150,30 165,150 250,210 235,220 150,165 65,220 50,210 135,150" fill="black"/></svg>'
+        tesla: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><path d="M150 30 C150 30 180 70 220 80 C220 80 170 95 150 170 C130 95 80 80 80 80 C120 70 150 30 150 30 Z" fill="#000"/><path d="M60 40 L240 40 L240 55 L60 55 Z" fill="#000"/></svg>',
+        bmw: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><circle cx="150" cy="150" r="130" fill="#000"/><circle cx="150" cy="150" r="115" fill="#fff"/><path d="M150 35 A115 115 0 0 1 265 150 L150 150 Z" fill="#0056b3"/><path d="M150 265 A115 115 0 0 1 35 150 L150 150 Z" fill="#0056b3"/></svg>',
+        ford: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150"><ellipse cx="150" cy="75" rx="140" ry="65" fill="#0056b3"/><ellipse cx="150" cy="75" rx="125" ry="52" fill="none" stroke="#fff" stroke-width="6"/><path d="M85 85 C95 65 110 60 125 65 C135 70 135 85 125 90 C110 95 100 80 105 75" fill="none" stroke="#fff" stroke-width="5"/></svg>',
+        audi: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 150"><circle cx="85" cy="75" r="45" fill="none" stroke="#000" stroke-width="12"/><circle cx="155" cy="75" r="45" fill="none" stroke="#000" stroke-width="12"/><circle cx="225" cy="75" r="45" fill="none" stroke="#000" stroke-width="12"/><circle cx="295" cy="75" r="45" fill="none" stroke="#000" stroke-width="12"/></svg>',
+        mercedes: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><circle cx="150" cy="150" r="130" fill="none" stroke="#000" stroke-width="12"/><polygon points="150,35 165,150 250,210 235,220 150,165 65,220 50,210 135,150" fill="#000"/></svg>'
     };
 
     function init3D() {
@@ -135,11 +134,16 @@
 
     function parseAndBuild(svgText) {
         document.getElementById('status').innerText = "Logo işleniyor...";
-        const loader = new THREE.SVGLoader();
-        const svgData = loader.parse(svgText);
-        currentSvgShapes = svgData.paths;
-        document.getElementById('status').innerText = "Model oluşturuldu!";
-        rebuildModel();
+        try {
+            const loader = new THREE.SVGLoader();
+            const svgData = loader.parse(svgText);
+            currentSvgShapes = svgData.paths;
+            document.getElementById('status').innerText = "Logo başarıyla yüklendi!";
+            rebuildModel();
+        } catch (e) {
+            document.getElementById('status').innerText = "SVG yükleme hatası!";
+            console.error(e);
+        }
     }
 
     function rebuildModel() {
@@ -155,30 +159,28 @@
         const thickness = parseFloat(document.getElementById('thicknessInput').value) || 3.5;
         const holeDia = parseFloat(document.getElementById('holeInput').value) || 4.5;
 
-        // 1. Ana Plaka ve Üst Köşede Halka Deliği
+        // 1. Ana Plaka ve Üst Halka Çıkıntısı
         const rectShape = new THREE.Shape();
         const hw = width / 2;
         const hh = height / 2;
-        const r = 5; // Köşe yuvarlama
+        const r = 5;
 
         rectShape.moveTo(-hw + r, -hh);
         rectShape.lineTo(hw - r, -hh);
         rectShape.quadraticCurveTo(hw, -hh, hw, -hh + r);
-        rectShape.lineTo(hw, hh - r - 8); // Üst kısımda halka çıkıntısı için pay
+        rectShape.lineTo(hw, hh - r - 8);
         rectShape.quadraticCurveTo(hw, hh - 8, hw - r, hh - 8);
         rectShape.lineTo(-hw + r, hh - 8);
         rectShape.quadraticCurveTo(-hw, hh - 8, -hw, hh - 8 - r);
         rectShape.lineTo(-hw, -hh + r);
         rectShape.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
 
-        // Halka çıkıntısı ve deliği ekle
         const bossX = 0;
         const bossY = hh - 4;
         const holePath = new THREE.Path();
         holePath.absarc(bossX, bossY, holeDia / 2, 0, Math.PI * 2, true);
         rectShape.holes.push(holePath);
 
-        // Üst kısma halka kulakçığı ekle
         const bossShape = new THREE.Shape();
         bossShape.absarc(bossX, bossY, (holeDia / 2) + 3, 0, Math.PI * 2, false);
         bossShape.holes.push(holePath);
@@ -202,17 +204,16 @@
             });
         });
 
-        // Logoyu ortala ve plaka boyutuna sığdır
         const box = new THREE.Box3().setFromObject(logoGroup);
         const size = new THREE.Vector3();
         box.getSize(size);
         
-        const maxW = width - 15;
-        const maxH = height - 20;
+        const maxW = width - 16;
+        const maxH = height - 22;
         const scale = Math.min(maxW / (size.x || 1), maxH / (size.y || 1));
         
-        logoGroup.scale.set(scale, -scale, 1); // SVG Y ekseni ters olduğu için -scale
-        logoGroup.position.set(- (size.x * scale) / 2, (size.y * scale) / 2, thickness);
+        logoGroup.scale.set(scale, -scale, 1);
+        logoGroup.position.set(- (size.x * scale) / 2, (size.y * scale) / 2 - 2, thickness);
 
         keychainGroup.add(logoGroup);
         scene.add(keychainGroup);
