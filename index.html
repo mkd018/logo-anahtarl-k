@@ -124,7 +124,6 @@
         }
     }
 
-    // Doğru orantılı, hatasız ve kusursuz geometrik logolar
     function createLogoGeometry(logoType) {
         const group = new THREE.Group();
         const mat = new THREE.MeshStandardMaterial({ color: 0x00a8cc, roughness: 0.2 });
@@ -135,14 +134,25 @@
         }
 
         if (logoType === 'tesla') {
-            // İkonik keskin Tesla "T"si ve üst barı
-            const topBar = new THREE.Shape();
-            topBar.moveTo(-20, 12); topBar.lineTo(20, 12); topBar.lineTo(20, 16); topBar.lineTo(-20, 16); topBar.lineTo(-20, 12);
-            addMesh(topBar);
-
             const mainT = new THREE.Shape();
-            mainT.moveTo(-18, 9); mainT.lineTo(18, 9); mainT.lineTo(3, -15); mainT.lineTo(-3, -15); mainT.lineTo(-18, 9);
+            mainT.moveTo(-16, 8);
+            mainT.lineTo(16, 8);
+            mainT.lineTo(13, 3);
+            mainT.lineTo(4, 3);
+            mainT.lineTo(2, -14);
+            mainT.lineTo(-2, -14);
+            mainT.lineTo(-4, 3);
+            mainT.lineTo(-13, 3);
+            mainT.lineTo(-16, 8);
             addMesh(mainT);
+
+            const topBar = new THREE.Shape();
+            topBar.moveTo(-18, 11);
+            topBar.lineTo(18, 11);
+            topBar.lineTo(19, 15);
+            topBar.lineTo(-19, 15);
+            topBar.lineTo(-18, 11);
+            addMesh(topBar);
         } 
         else if (logoType === 'bmw') {
             const ring = new THREE.Shape();
@@ -238,6 +248,7 @@
         const holeDia = parseFloat(document.getElementById('holeInput').value) || 4.5;
         const logoType = document.getElementById('logoSelect').value;
 
+        // 1. Düzgün Formlu Ana Plaka 
         const rectShape = new THREE.Shape();
         const hw = width / 2;
         const hh = height / 2;
@@ -246,18 +257,12 @@
         rectShape.moveTo(-hw + r, -hh);
         rectShape.lineTo(hw - r, -hh);
         rectShape.quadraticCurveTo(hw, -hh, hw, -hh + r);
-        rectShape.lineTo(hw, hh - r - 8);
-        rectShape.quadraticCurveTo(hw, hh - 8, hw - r, hh - 8);
-        rectShape.lineTo(-hw + r, hh - 8);
-        rectShape.quadraticCurveTo(-hw, hh - 8, -hw, hh - 8 - r);
+        rectShape.lineTo(hw, hh - r);
+        rectShape.quadraticCurveTo(hw, hh, hw - r, hh);
+        rectShape.lineTo(-hw + r, hh);
+        rectShape.quadraticCurveTo(-hw, hh, -hw, hh - r);
         rectShape.lineTo(-hw, -hh + r);
         rectShape.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
-
-        const bossX = 0;
-        const bossY = hh - 4;
-        const holePath1 = new THREE.Path();
-        holePath1.absarc(bossX, bossY, holeDia / 2, 0, Math.PI * 2, true);
-        rectShape.holes.push(holePath1);
 
         const extrudeSettings = { depth: thickness, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.15, bevelThickness: 0.15 };
         const plateGeo = new THREE.ExtrudeGeometry(rectShape, extrudeSettings);
@@ -266,20 +271,21 @@
         plateMesh.position.set(0, 0, thickness / 2);
         keychainGroup.add(plateMesh);
 
+        // 2. Deliği Barındıran Asma Kulakçığı
         const bossShape = new THREE.Shape();
-        bossShape.absarc(bossX, bossY, (holeDia / 2) + 3, 0, Math.PI * 2, false);
-        const holePath2 = new THREE.Path();
-        holePath2.absarc(bossX, bossY, holeDia / 2, 0, Math.PI * 2, true);
-        bossShape.holes.push(holePath2);
+        bossShape.absarc(0, 0, (holeDia / 2) + 3, 0, Math.PI * 2, false);
+        const holePath = new THREE.Path();
+        holePath.absarc(0, 0, holeDia / 2, 0, Math.PI * 2, true);
+        bossShape.holes.push(holePath);
 
         const bossGeo = new THREE.ExtrudeGeometry(bossShape, extrudeSettings);
+        bossGeo.center();
         const bossMesh = new THREE.Mesh(bossGeo, plateMaterial);
-        bossMesh.position.set(0, 0, thickness / 2);
-        
-        bossMesh.position.x = bossX;
-        bossMesh.position.y = bossY + 4; 
+        // Doğrudan plakanın üst sınırına tam olarak oturacak şekilde pozisyonlanır
+        bossMesh.position.set(0, hh, thickness / 2); 
         keychainGroup.add(bossMesh);
 
+        // 3. Logo Grubu
         let logoGroup;
         if (activeMode === 'custom' && customSvgShapes) {
             logoGroup = new THREE.Group();
