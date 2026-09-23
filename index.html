@@ -79,13 +79,13 @@
     let currentSvgShapes = null;
     let currentLogoName = "tesla";
 
-    // Tamamen optimize edilmiş ve SVGLoader uyumlu SVG formatları
+    // 3D baskı için optimize edilmiş saf hat/kabartma SVG verileri
     const presetLogos = {
-        tesla: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><path d="M150 30 C150 30 180 70 220 80 C220 80 170 95 150 170 C130 95 80 80 80 80 C120 70 150 30 150 30 Z" fill="#000"/><path d="M60 40 L240 40 L240 55 L60 55 Z" fill="#000"/></svg>',
-        bmw: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><circle cx="150" cy="150" r="130" fill="#000"/><circle cx="150" cy="150" r="115" fill="#fff"/><path d="M150 35 A115 115 0 0 1 265 150 L150 150 Z" fill="#0056b3"/><path d="M150 265 A115 115 0 0 1 35 150 L150 150 Z" fill="#0056b3"/></svg>',
-        ford: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150"><ellipse cx="150" cy="75" rx="140" ry="65" fill="#0056b3"/><ellipse cx="150" cy="75" rx="125" ry="52" fill="none" stroke="#fff" stroke-width="6"/><path d="M85 85 C95 65 110 60 125 65 C135 70 135 85 125 90 C110 95 100 80 105 75" fill="none" stroke="#fff" stroke-width="5"/></svg>',
-        audi: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 150"><circle cx="85" cy="75" r="45" fill="none" stroke="#000" stroke-width="12"/><circle cx="155" cy="75" r="45" fill="none" stroke="#000" stroke-width="12"/><circle cx="225" cy="75" r="45" fill="none" stroke="#000" stroke-width="12"/><circle cx="295" cy="75" r="45" fill="none" stroke="#000" stroke-width="12"/></svg>',
-        mercedes: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><circle cx="150" cy="150" r="130" fill="none" stroke="#000" stroke-width="12"/><polygon points="150,35 165,150 250,210 235,220 150,165 65,220 50,210 135,150" fill="#000"/></svg>'
+        tesla: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><path d="M150 40 C150 40 175 75 210 85 C175 95 150 160 150 230 C150 160 125 95 90 85 C125 75 150 40 150 40 Z" fill="#fff"/><path d="M75 50 L225 50 L225 65 L75 65 Z" fill="#fff"/></svg>',
+        bmw: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><circle cx="150" cy="150" r="110" fill="none" stroke="#fff" stroke-width="16"/><path d="M150 40 A110 110 0 0 1 260 150 L150 150 Z" fill="#fff"/><path d="M150 260 A110 110 0 0 1 40 150 L150 150 Z" fill="#fff"/></svg>',
+        ford: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150"><ellipse cx="150" cy="75" rx="125" ry="52" fill="none" stroke="#fff" stroke-width="10"/><path d="M90 85 C100 65 115 60 130 65 C140 70 140 85 130 90 C115 95 105 80 110 75" fill="none" stroke="#fff" stroke-width="8"/></svg>',
+        audi: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 150"><circle cx="85" cy="75" r="45" fill="none" stroke="#fff" stroke-width="12"/><circle cx="155" cy="75" r="45" fill="none" stroke="#fff" stroke-width="12"/><circle cx="225" cy="75" r="45" fill="none" stroke="#fff" stroke-width="12"/><circle cx="295" cy="75" r="45" fill="none" stroke="#fff" stroke-width="12"/></svg>',
+        mercedes: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><circle cx="150" cy="150" r="115" fill="none" stroke="#fff" stroke-width="14"/><polygon points="150,45 163,150 235,200 220,212 150,162 80,212 65,200 137,150" fill="#fff"/></svg>'
     };
 
     function init3D() {
@@ -152,7 +152,7 @@
 
         keychainGroup = new THREE.Group();
         const plateMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 });
-        const logoMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+        const logoMaterial = new THREE.MeshStandardMaterial({ color: 0x00a8cc, roughness: 0.2 });
 
         const width = parseFloat(document.getElementById('widthInput').value) || 70;
         const height = parseFloat(document.getElementById('heightInput').value) || 50;
@@ -193,7 +193,7 @@
         plateMesh.position.set(0, 0, thickness / 2);
         keychainGroup.add(plateMesh);
 
-        // 2. SVG Logoyu Kabartma Olarak Ekle
+        // 2. SVG Logoyu Şık Kabartma Olarak Ekle
         const logoGroup = new THREE.Group();
         currentSvgShapes.forEach(path => {
             const shapes = path.toShapes(true);
