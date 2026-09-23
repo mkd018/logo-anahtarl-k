@@ -1,292 +1,2439 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Tüm Logolar - Anahtarlık Fabrikası</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 480px; box-sizing: border-box; }
-        h2 { color: #333; margin-top: 0; text-align: center; font-size: 20px; }
-        .form-group { margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        label { font-weight: 600; color: #555; font-size: 14px; }
-        select, input[type="file"], input[type="number"] { width: 180px; padding: 6px 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; text-align: right; }
-        select { text-align-last: right; }
-        .full-width { width: 100%; display: block; margin-bottom: 8px; }
-        #canvas-container { width: 100%; height: 240px; background: #e9ecef; border-radius: 8px; margin: 15px 0; position: relative; overflow: hidden; cursor: grab; }
-        #canvas-container:active { cursor: grabbing; }
-        button { background: #28a745; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        button:hover { background: #218838; }
-        hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
-        .status { font-size: 11px; color: #007bff; text-align: center; font-weight: bold; margin-bottom: 10px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Parametrik Logo Anahtarlık Fabrikası</title>
+
+<!-- THREE.JS r128 -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background:
+        radial-gradient(circle at top left, #20242b 0%, #0c0e12 45%, #050608 100%);
+    color: #f5f5f5;
+    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.app {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    background: rgba(10,12,16,.92);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    backdrop-filter: blur(12px);
+    z-index: 10;
+}
+
+.logo-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg,#ffffff,#777);
+    color: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 20px;
+}
+
+.header h1 {
+    font-size: 18px;
+    margin: 0;
+}
+
+.header small {
+    display: block;
+    color: #888;
+    margin-top: 4px;
+    font-size: 11px;
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+}
+
+.viewer {
+    flex: 1;
+    position: relative;
+    min-width: 0;
+}
+
+#canvas-container {
+    width: 100%;
+    height: 100%;
+}
+
+.status {
+    position: absolute;
+    left: 20px;
+    bottom: 18px;
+    background: rgba(0,0,0,.6);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px;
+    padding: 9px 13px;
+    font-size: 12px;
+    color: #aaa;
+    pointer-events: none;
+}
+
+.panel {
+    width: 340px;
+    padding: 20px;
+    background: rgba(16,18,23,.96);
+    border-left: 1px solid rgba(255,255,255,.08);
+    overflow-y: auto;
+}
+
+.section {
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #777;
+    margin-bottom: 10px;
+}
+
+label {
+    display: block;
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 6px;
+}
+
+select,
+input[type="number"],
+input[type="file"] {
+    width: 100%;
+    background: #0b0d11;
+    border: 1px solid #30343c;
+    color: #eee;
+    border-radius: 8px;
+    padding: 11px;
+    outline: none;
+}
+
+select:focus,
+input[type="number"]:focus {
+    border-color: #777;
+}
+
+.field {
+    margin-bottom: 12px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.brand-preview {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #0b0d11;
+    border: 1px solid #262a31;
+}
+
+.color-box {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,.25);
+}
+
+.brand-name {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.btn {
+    width: 100%;
+    border: 0;
+    border-radius: 9px;
+    padding: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg,#f4f4f4,#a9a9a9);
+    color: #111;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+}
+
+.btn-secondary {
+    background: #20242b;
+    color: #ddd;
+    border: 1px solid #383d46;
+    margin-top: 8px;
+}
+
+.info {
+    font-size: 11px;
+    color: #777;
+    line-height: 1.5;
+    margin-top: 8px;
+}
+
+.dimensions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-top: 15px;
+}
+
+.dimension {
+    background: #0b0d11;
+    padding: 9px;
+    border-radius: 7px;
+    border: 1px solid #20242b;
+}
+
+.dimension span {
+    display: block;
+    color: #666;
+    font-size: 9px;
+}
+
+.dimension strong {
+    font-size: 12px;
+}
+
+@media(max-width:800px) {
+    body {
+        overflow: auto;
+    }
+
+    .main {
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    .viewer {
+        height: 55vh;
+        min-height: 420px;
+    }
+
+    .panel {
+        width: 100%;
+        border-left: 0;
+        border-top: 1px solid rgba(255,255,255,.08);
+    }
+}
+</style>
 </head>
+
 <body>
 
-<div class="container">
-    <h2>3D Tüm Logolar - Anahtarlık Fabrikası</h2>
-    
-    <div class="form-group full-width" style="flex-direction: column; align-items: flex-start;">
-        <label for="logoSelect">Tüm Markalar (20 Orijinal Logo):</label>
-        <select id="logoSelect" onchange="loadPresetLogo()" style="width: 100%; text-align: left; font-weight: bold;"></select>
-    </div>
+<div class="app">
 
-    <div class="form-group full-width" style="flex-direction: column; align-items: flex-start; margin-top: 10px;">
-        <label for="svgUpload">Veya Özel SVG Logonuzu Yükleyin:</label>
-        <input type="file" id="svgUpload" accept=".svg" onchange="handleSvgUpload(event)" style="width: 100%;">
-    </div>
+    <header class="header">
+        <div class="logo-title">
+            <div class="logo-icon">3D</div>
+            <div>
+                <h1>Parametrik Logo Anahtarlık Fabrikası</h1>
+                <small>SVG → 3D → STL üretim sistemi</small>
+            </div>
+        </div>
 
-    <div id="status" class="status">Sistem aktif ve hazır!</div>
-    <hr>
-    <div class="form-group"><label>Genişlik (X - mm):</label><input type="number" id="widthInput" value="60" min="30" max="150" oninput="build3D()"></div>
-    <div class="form-group"><label>Yükseklik (Y - mm):</label><input type="number" id="heightInput" value="60" min="30" max="100" oninput="build3D()"></div>
-    <div class="form-group"><label>Kalınlık (Z - mm):</label><input type="number" id="thicknessInput" value="3.5" min="1" max="10" step="0.5" oninput="build3D()"></div>
-    <div class="form-group"><label>Delik Çapı (mm):</label><input type="number" id="holeInput" value="4.5" min="2" max="10" step="0.5" oninput="build3D()"></div>
+        <div style="font-size:11px;color:#666;">
+            Three.js r128
+        </div>
+    </header>
 
-    <div id="canvas-container"></div>
-    <button onclick="downloadSTL()">Logo STL İndir</button>
+    <main class="main">
+
+        <section class="viewer">
+            <div id="canvas-container"></div>
+
+            <div class="status" id="status">
+                Model hazırlanıyor...
+            </div>
+        </section>
+
+        <aside class="panel">
+
+            <div class="section">
+                <div class="section-title">Marka</div>
+
+                <label>Logo seç</label>
+
+                <select id="brandSelect">
+                    <option value="tesla">Tesla</option>
+                    <option value="bmw">BMW</option>
+                    <option value="ford">Ford</option>
+                    <option value="audi">Audi</option>
+                    <option value="mercedes">Mercedes</option>
+                    <option value="opel">Opel</option>
+                    <option value="renault">Renault</option>
+                    <option value="fiat">Fiat</option>
+                    <option value="honda">Honda</option>
+                    <option value="hyundai">Hyundai</option>
+                    <option value="volkswagen">VW</option>
+                    <option value="citroen">Citroen</option>
+                    <option value="suzuki">Suzuki</option>
+                    <option value="peugeot">Peugeot</option>
+                    <option value="toyota">Toyota</option>
+                    <option value="skoda">Skoda</option>
+                    <option value="nissan">Nissan</option>
+                    <option value="mitsubishi">Mitsubishi</option>
+                    <option value="mini">Mini</option>
+                    <option value="volvo">Volvo</option>
+                </select>
+
+                <div class="brand-preview">
+                    <div class="color-box" id="colorPreview"></div>
+                    <div class="brand-name" id="brandName">Tesla</div>
+                </div>
+            </div>
+
+            <div class="section">
+
+                <div class="section-title">
+                    Parametreler
+                </div>
+
+                <div class="grid">
+
+                    <div class="field">
+                        <label>Genişlik (mm)</label>
+                        <input
+                            id="width"
+                            type="number"
+                            value="70"
+                            min="25"
+                            max="200"
+                            step="1"
+                        >
+                    </div>
+
+                    <div class="field">
+                        <label>Yükseklik (mm)</label>
+                        <input
+                            id="height"
+                            type="number"
+                            value="45"
+                            min="20"
+                            max="150"
+                            step="1"
+                        >
+                    </div>
+
+                    <div class="field">
+                        <label>Plaka Kalınlığı Z (mm)</label>
+                        <input
+                            id="thickness"
+                            type="number"
+                            value="3"
+                            min="1"
+                            max="15"
+                            step="0.1"
+                        >
+                    </div>
+
+                    <div class="field">
+                        <label>Delik Çapı (mm)</label>
+                        <input
+                            id="hole"
+                            type="number"
+                            value="5"
+                            min="2"
+                            max="15"
+                            step="0.5"
+                        >
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="section">
+
+                <div class="section-title">
+                    Özel SVG
+                </div>
+
+                <input
+                    type="file"
+                    id="svgFile"
+                    accept=".svg,image/svg+xml"
+                >
+
+                <div class="info">
+                    Kendi SVG logonu yükleyebilirsin.
+                    Beyaz arka plan ve fill="none" katmanları otomatik
+                    temizlenir.
+                </div>
+
+            </div>
+
+            <div class="section">
+
+                <button class="btn btn-primary" id="downloadBtn">
+                    STL İndir
+                </button>
+
+                <button class="btn btn-secondary" id="resetBtn">
+                    Varsayılan Ayarlara Dön
+                </button>
+
+            </div>
+
+            <div class="dimensions">
+                <div class="dimension">
+                    <span>MODEL</span>
+                    <strong id="dimensionText">70 × 45 mm</strong>
+                </div>
+
+                <div class="dimension">
+                    <span>KALINLIK</span>
+                    <strong id="thicknessText">3 mm</strong>
+                </div>
+            </div>
+
+            <div class="info">
+                🖱 Sol tuş: Döndür<br>
+                🖱 Sağ tuş: Pan<br>
+                🖱 Tekerlek: Zoom
+            </div>
+
+        </aside>
+
+    </main>
+
 </div>
 
 <script>
-    let scene, camera, renderer, controls, keychainGroup;
-    let currentSvgPaths = null; 
-    let activeMode = 'preset';
 
-    const C_BLK = 0x222222, C_WHT = 0xffffff, C_RED = 0xcc1111, C_BLU = 0x0044cc;
+/* =========================================================
+   3D LOGO ANAHTARLIK FABRİKASI
+   THREE.JS r128
+========================================================= */
 
-    const BRANDS = {
-        tesla: { name: "Tesla", base: 'rect', cb: C_WHT, cl: C_RED, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/tesla.svg" },
-        bmw: { name: "BMW", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/bmw.svg" },
-        ford: { name: "Ford", base: 'oval', cb: C_BLU, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/ford.svg" },
-        audi: { name: "Audi", base: 'rect', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/audi.svg" },
-        mercedes: { name: "Mercedes", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/mercedes.svg" },
-        opel: { name: "Opel", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/opel.svg" },
-        renault: { name: "Renault", base: 'diamond', cb: C_WHT, cl: C_BLK, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/renault.svg" },
-        fiat: { name: "Fiat", base: 'circle', cb: C_RED, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/fiat.svg" },
-        honda: { name: "Honda", base: 'rect', cb: C_RED, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/honda.svg" },
-        hyundai: { name: "Hyundai", base: 'oval', cb: C_BLU, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/hyundai.svg" },
-        vw: { name: "VW", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/volkswagen.svg" },
-        citroen: { name: "Citroen", base: 'rect', cb: C_WHT, cl: C_BLK, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/citroen.svg" },
-        suzuki: { name: "Suzuki", base: 'rect', cb: C_WHT, cl: C_RED, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/suzuki.svg" },
-        peugeot: { name: "Peugeot", base: 'shield', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/peugeot.svg" },
-        toyota: { name: "Toyota", base: 'oval', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/toyota.svg" },
-        skoda: { name: "Skoda", base: 'circle', cb: C_WHT, cl: C_BLK, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/skoda.svg" },
-        nissan: { name: "Nissan", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/nissan.svg" },
-        mitsubishi: { name: "Mitsubishi", base: 'rect', cb: C_WHT, cl: C_RED, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/mitsubishi.svg" },
-        mini: { name: "Mini", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/mini.svg" },
-        volvo: { name: "Volvo", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/volvo.svg" }
-    };
+let scene;
+let camera;
+let renderer;
+let controls;
 
-    function init3D() {
-        const container = document.getElementById('canvas-container');
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xe9ecef);
+let productGroup = null;
+let logoGroup = null;
 
-        camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, -130, 80);
-        camera.up.set(0, 0, 1);
-        camera.lookAt(0, 0, 0);
+const container = document.getElementById("canvas-container");
+const statusEl = document.getElementById("status");
 
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        container.appendChild(renderer.domElement);
+const brandSelect = document.getElementById("brandSelect");
+const widthInput = document.getElementById("width");
+const heightInput = document.getElementById("height");
+const thicknessInput = document.getElementById("thickness");
+const holeInput = document.getElementById("hole");
 
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
+const svgFile = document.getElementById("svgFile");
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(10, -20, 50);
-        scene.add(dirLight);
+const brandNameEl = document.getElementById("brandName");
+const colorPreview = document.getElementById("colorPreview");
 
-        const sel = document.getElementById('logoSelect');
-        Object.keys(BRANDS).forEach(k => {
-            let opt = document.createElement('option');
-            opt.value = k; opt.innerText = BRANDS[k].name;
-            sel.appendChild(opt);
-        });
+const dimensionText = document.getElementById("dimensionText");
+const thicknessText = document.getElementById("thicknessText");
 
-        loadPresetLogo();
-        animate();
+
+/* =========================================================
+   MARKA VERİTABANI
+========================================================= */
+
+const BRANDS = {
+
+    tesla: {
+        name: "Tesla",
+        slug: "tesla",
+        base: "#f4f4f4",
+        logo: "#c8102e",
+        plate: "rounded"
+    },
+
+    bmw: {
+        name: "BMW",
+        slug: "bmw",
+        base: "#111111",
+        logo: "#ffffff",
+        plate: "circle"
+    },
+
+    ford: {
+        name: "Ford",
+        slug: "ford",
+        base: "#1464a5",
+        logo: "#ffffff",
+        plate: "oval"
+    },
+
+    audi: {
+        name: "Audi",
+        slug: "audi",
+        base: "#111111",
+        logo: "#eeeeee",
+        plate: "rounded"
+    },
+
+    mercedes: {
+        name: "Mercedes",
+        slug: "mercedes",
+        base: "#111111",
+        logo: "#eeeeee",
+        plate: "circle"
+    },
+
+    opel: {
+        name: "Opel",
+        slug: "opel",
+        base: "#111111",
+        logo: "#eeeeee",
+        plate: "circle"
+    },
+
+    renault: {
+        name: "Renault",
+        slug: "renault",
+        base: "#111111",
+        logo: "#eeeeee",
+        plate: "diamond"
+    },
+
+    fiat: {
+        name: "Fiat",
+        slug: "fiat",
+        base: "#c8102e",
+        logo: "#ffffff",
+        plate: "circle"
+    },
+
+    honda: {
+        name: "Honda",
+        slug: "honda",
+        base: "#d71920",
+        logo: "#ffffff",
+        plate: "rounded"
+    },
+
+    hyundai: {
+        name: "Hyundai",
+        slug: "hyundai",
+        base: "#1464a5",
+        logo: "#ffffff",
+        plate: "oval"
+    },
+
+    volkswagen: {
+        name: "Volkswagen",
+        slug: "volkswagen",
+        base: "#111111",
+        logo: "#ffffff",
+        plate: "circle"
+    },
+
+    citroen: {
+        name: "Citroen",
+        slug: "citroen",
+        base: "#111111",
+        logo: "#eeeeee",
+        plate: "rounded"
+    },
+
+    suzuki: {
+        name: "Suzuki",
+        slug: "suzuki",
+        base: "#d71920",
+        logo: "#ffffff",
+        plate: "rounded"
+    },
+
+    peugeot: {
+        name: "Peugeot",
+        slug: "peugeot",
+        base: "#111111",
+        logo: "#ffffff",
+        plate: "shield"
+    },
+
+    toyota: {
+        name: "Toyota",
+        slug: "toyota",
+        base: "#111111",
+        logo: "#ffffff",
+        plate: "circle"
+    },
+
+    skoda: {
+        name: "Skoda",
+        slug: "skoda",
+        base: "#111111",
+        logo: "#ffffff",
+        plate: "circle"
+    },
+
+    nissan: {
+        name: "Nissan",
+        slug: "nissan",
+        base: "#111111",
+        logo: "#ffffff",
+        plate: "circle"
+    },
+
+    mitsubishi: {
+        name: "Mitsubishi",
+        slug: "mitsubishi",
+        base: "#d71920",
+        logo: "#ffffff",
+        plate: "diamond"
+    },
+
+    mini: {
+        name: "Mini",
+        slug: "mini",
+        base: "#111111",
+        logo: "#ffffff",
+        plate: "rounded"
+    },
+
+    volvo: {
+        name: "Volvo",
+        slug: "volvo",
+        base: "#111111",
+        logo: "#ffffff",
+        plate: "circle"
     }
 
-    function loadPresetLogo() {
-        activeMode = 'preset';
-        document.getElementById('svgUpload').value = ""; 
-        
-        const brand = BRANDS[document.getElementById('logoSelect').value];
-        document.getElementById('status').innerText = "Orijinal logo indiriliyor...";
-        document.getElementById('status').style.color = "#ffc107";
+};
 
-        const loader = new THREE.SVGLoader();
-        loader.load(brand.url, function (svgData) {
-            currentSvgPaths = svgData.paths;
-            document.getElementById('status').innerText = "Orijinal Renkli Logo Hazır!";
-            document.getElementById('status').style.color = "#28a745";
-            build3D();
-        }, undefined, function (error) {
-            document.getElementById('status').innerText = "Bağlantı Hatası!";
-            document.getElementById('status').style.color = "red";
-        });
+
+/* =========================================================
+   SAHNE
+========================================================= */
+
+function init() {
+
+    scene = new THREE.Scene();
+
+    scene.background = new THREE.Color(0x090b0f);
+
+    camera = new THREE.PerspectiveCamera(
+        45,
+        container.clientWidth / container.clientHeight,
+        0.1,
+        1000
+    );
+
+    camera.position.set(0, 0, 105);
+
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: false
+    });
+
+    renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio, 2)
+    );
+
+    renderer.setSize(
+        container.clientWidth,
+        container.clientHeight
+    );
+
+    renderer.outputEncoding = THREE.sRGBEncoding;
+
+    container.appendChild(renderer.domElement);
+
+
+    /* OrbitControls */
+
+    controls = new THREE.OrbitControls(
+        camera,
+        renderer.domElement
+    );
+
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.07;
+
+    controls.enablePan = true;
+
+    controls.minDistance = 20;
+    controls.maxDistance = 300;
+
+
+    /* Işık */
+
+    const ambient = new THREE.AmbientLight(
+        0xffffff,
+        1.8
+    );
+
+    scene.add(ambient);
+
+
+    const keyLight = new THREE.DirectionalLight(
+        0xffffff,
+        2.4
+    );
+
+    keyLight.position.set(
+        50,
+        80,
+        100
+    );
+
+    scene.add(keyLight);
+
+
+    const fillLight = new THREE.DirectionalLight(
+        0x99bbff,
+        1.0
+    );
+
+    fillLight.position.set(
+        -70,
+        -30,
+        50
+    );
+
+    scene.add(fillLight);
+
+
+    const rimLight = new THREE.DirectionalLight(
+        0xffffff,
+        1.2
+    );
+
+    rimLight.position.set(
+        0,
+        -80,
+        -50
+    );
+
+    scene.add(rimLight);
+
+
+    createGrid();
+
+    createModel();
+
+    animate();
+}
+
+
+/* =========================================================
+   ZEMİN GRID
+========================================================= */
+
+function createGrid() {
+
+    const grid = new THREE.GridHelper(
+        300,
+        30,
+        0x333840,
+        0x181b20
+    );
+
+    grid.rotation.x = Math.PI / 2;
+
+    grid.position.z = -8;
+
+    scene.add(grid);
+}
+
+
+/* =========================================================
+   YUVARLATILMIŞ DİKDÖRTGEN
+========================================================= */
+
+function roundedRectShape(
+    width,
+    height,
+    radius
+) {
+
+    const shape = new THREE.Shape();
+
+    const x = -width / 2;
+    const y = -height / 2;
+
+    radius = Math.min(
+        radius,
+        width / 2,
+        height / 2
+    );
+
+    shape.moveTo(
+        x + radius,
+        y
+    );
+
+    shape.lineTo(
+        x + width - radius,
+        y
+    );
+
+    shape.quadraticCurveTo(
+        x + width,
+        y,
+        x + width,
+        y + radius
+    );
+
+    shape.lineTo(
+        x + width,
+        y + height - radius
+    );
+
+    shape.quadraticCurveTo(
+        x + width,
+        y + height,
+        x + width - radius,
+        y + height
+    );
+
+    shape.lineTo(
+        x + radius,
+        y + height
+    );
+
+    shape.quadraticCurveTo(
+        x,
+        y + height,
+        x,
+        y + height - radius
+    );
+
+    shape.lineTo(
+        x,
+        y + radius
+    );
+
+    shape.quadraticCurveTo(
+        x,
+        y,
+        x + radius,
+        y
+    );
+
+    return shape;
+}
+
+
+/* =========================================================
+   PLAKA ŞEKLİ
+========================================================= */
+
+function createPlateShape(
+    type,
+    width,
+    height
+) {
+
+    if (type === "circle") {
+
+        const radius =
+            Math.min(width, height) / 2;
+
+        const shape = new THREE.Shape();
+
+        shape.absarc(
+            0,
+            0,
+            radius,
+            0,
+            Math.PI * 2,
+            false
+        );
+
+        return shape;
     }
 
-    function handleSvgUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const loader = new THREE.SVGLoader();
-                const svgData = loader.parse(e.target.result);
-                
-                let validPaths = svgData.paths.filter(p => {
-                    const style = p.userData.style;
-                    if (style && (style.fill === 'none' || style.fillOpacity === 0)) return false;
-                    let f = style ? style.fill : null;
-                    if (f) {
-                        f = f.toLowerCase().replace(/\s/g, '');
-                        if (f === '#ffffff' || f === 'white' || f === 'rgb(255,255,255)') return false;
-                    }
-                    return true;
-                });
-                
-                currentSvgPaths = validPaths.length > 0 ? validPaths : svgData.paths;
-                activeMode = 'custom';
-                document.getElementById('status').innerText = "Özel SVG başarıyla yüklendi!";
-                document.getElementById('status').style.color = "#007bff";
-                build3D();
-            } catch (err) {
-                document.getElementById('status').innerText = "SVG okuma hatası!";
-                document.getElementById('status').style.color = "red";
+
+    if (type === "oval") {
+
+        const shape = new THREE.Shape();
+
+        const rx = width / 2;
+        const ry = height / 2;
+
+        for (let i = 0; i <= 96; i++) {
+
+            const a =
+                (i / 96) * Math.PI * 2;
+
+            const x =
+                Math.cos(a) * rx;
+
+            const y =
+                Math.sin(a) * ry;
+
+            if (i === 0) {
+                shape.moveTo(x, y);
+            } else {
+                shape.lineTo(x, y);
             }
-        };
+        }
+
+        return shape;
+    }
+
+
+    if (type === "diamond") {
+
+        const shape = new THREE.Shape();
+
+        shape.moveTo(
+            0,
+            height / 2
+        );
+
+        shape.lineTo(
+            width / 2,
+            0
+        );
+
+        shape.lineTo(
+            0,
+            -height / 2
+        );
+
+        shape.lineTo(
+            -width / 2,
+            0
+        );
+
+        shape.closePath();
+
+        return shape;
+    }
+
+
+    if (type === "shield") {
+
+        const shape = new THREE.Shape();
+
+        shape.moveTo(
+            -width / 2,
+            height / 2
+        );
+
+        shape.lineTo(
+            width / 2,
+            height / 2
+        );
+
+        shape.lineTo(
+            width / 2,
+            0
+        );
+
+        shape.quadraticCurveTo(
+            width / 2,
+            -height * 0.30,
+            0,
+            -height / 2
+        );
+
+        shape.quadraticCurveTo(
+            -width / 2,
+            -height * 0.30,
+            -width / 2,
+            0
+        );
+
+        shape.closePath();
+
+        return shape;
+    }
+
+
+    return roundedRectShape(
+        width,
+        height,
+        Math.min(width, height) * 0.16
+    );
+}
+
+
+/* =========================================================
+   MODEL OLUŞTUR
+========================================================= */
+
+async function createModel() {
+
+    if (productGroup) {
+
+        disposeGroup(productGroup);
+
+        scene.remove(productGroup);
+    }
+
+
+    productGroup = new THREE.Group();
+
+    scene.add(productGroup);
+
+
+    const width =
+        Math.max(25, Number(widthInput.value));
+
+    const height =
+        Math.max(20, Number(heightInput.value));
+
+    const thickness =
+        Math.max(1, Number(thicknessInput.value));
+
+    const holeDiameter =
+        Math.max(2, Number(holeInput.value));
+
+
+    const selected =
+        brandSelect.value;
+
+    const brand =
+        BRANDS[selected];
+
+
+    updateInterface(
+        brand,
+        width,
+        height,
+        thickness
+    );
+
+
+    statusEl.textContent =
+        "Model oluşturuluyor...";
+
+
+    /* -----------------------------------------------------
+       PLAKA
+    ----------------------------------------------------- */
+
+    const plateShape =
+        createPlateShape(
+            brand.plate,
+            width,
+            height
+        );
+
+
+    const plateGeometry =
+        new THREE.ExtrudeGeometry(
+            plateShape,
+            {
+                depth: thickness,
+                bevelEnabled: true,
+                bevelSegments: 2,
+                bevelSize: 0.5,
+                bevelThickness: 0.35,
+                curveSegments: 32
+            }
+        );
+
+
+    plateGeometry.computeBoundingBox();
+
+    const plateBox =
+        plateGeometry.boundingBox;
+
+
+    /*
+       X / Y merkezleme.
+       Shape zaten merkezli fakat özellikle
+       boundingBox kullanıyoruz.
+    */
+
+    const plateCenter =
+        new THREE.Vector3();
+
+    plateBox.getCenter(plateCenter);
+
+    plateGeometry.translate(
+        -plateCenter.x,
+        -plateCenter.y,
+        0
+    );
+
+
+    const plateMaterial =
+        new THREE.MeshStandardMaterial({
+
+            color: brand.base,
+
+            metalness: 0.35,
+
+            roughness: 0.28,
+
+            side: THREE.DoubleSide
+        });
+
+
+    const plateMesh =
+        new THREE.Mesh(
+            plateGeometry,
+            plateMaterial
+        );
+
+
+    productGroup.add(
+        plateMesh
+    );
+
+
+    /* -----------------------------------------------------
+       GÜNCEL BOUNDING BOX
+    ----------------------------------------------------- */
+
+    plateMesh.geometry.computeBoundingBox();
+
+    const box =
+        plateMesh.geometry.boundingBox;
+
+    const maxY =
+        box.max.y;
+
+
+    /* -----------------------------------------------------
+       ASMA KULAKÇIĞI
+    ----------------------------------------------------- */
+
+    const bossRadius =
+        Math.max(
+            holeDiameter / 2 + 2.5,
+            4
+        );
+
+
+    const holeRadius =
+        holeDiameter / 2;
+
+
+    /*
+       KRİTİK KURAL:
+
+       Y = maxY + bossRadius - 1.5
+
+       Böylece halka plakaya kaynar.
+    */
+
+    const bossY =
+        maxY +
+        bossRadius -
+        1.5;
+
+
+    /*
+       Gerçek delikli halka.
+
+       THREE.Shape içine hole ekleniyor.
+    */
+
+    const ringShape =
+        new THREE.Shape();
+
+    ringShape.absarc(
+        0,
+        0,
+        bossRadius,
+        0,
+        Math.PI * 2,
+        false
+    );
+
+
+    const holePath =
+        new THREE.Path();
+
+    holePath.absarc(
+        0,
+        0,
+        holeRadius,
+        0,
+        Math.PI * 2,
+        true
+    );
+
+
+    ringShape.holes.push(
+        holePath
+    );
+
+
+    const ringGeometry =
+        new THREE.ExtrudeGeometry(
+            ringShape,
+            {
+                depth: thickness,
+                bevelEnabled: true,
+                bevelSegments: 2,
+                bevelSize: 0.35,
+                bevelThickness: 0.25,
+                curveSegments: 32
+            }
+        );
+
+
+    ringGeometry.computeBoundingBox();
+
+    const ringMaterial =
+        new THREE.MeshStandardMaterial({
+
+            color: brand.base,
+
+            metalness: 0.35,
+
+            roughness: 0.28,
+
+            side: THREE.DoubleSide
+        });
+
+
+    const ringMesh =
+        new THREE.Mesh(
+            ringGeometry,
+            ringMaterial
+        );
+
+
+    ringMesh.position.set(
+        0,
+        bossY,
+        0
+    );
+
+
+    productGroup.add(
+        ringMesh
+    );
+
+
+    /* -----------------------------------------------------
+       LOGO
+    ----------------------------------------------------- */
+
+    await loadBrandLogo(
+        selected,
+        brand,
+        width,
+        height,
+        thickness
+    );
+
+
+    centerProduct();
+
+    statusEl.textContent =
+        "Hazır — modeli döndürerek inceleyebilirsin.";
+}
+
+
+/* =========================================================
+   LOGO YÜKLE
+========================================================= */
+
+function loadBrandLogo(
+    brandKey,
+    brand,
+    width,
+    height,
+    thickness
+) {
+
+    return new Promise(
+        function(resolve) {
+
+            if (logoGroup) {
+
+                disposeGroup(logoGroup);
+
+                productGroup.remove(
+                    logoGroup
+                );
+            }
+
+
+            logoGroup =
+                new THREE.Group();
+
+            productGroup.add(
+                logoGroup
+            );
+
+
+            const url =
+                "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/" +
+                brand.slug +
+                ".svg";
+
+
+            const loader =
+                new THREE.SVGLoader();
+
+
+            loader.load(
+
+                url,
+
+                function(data) {
+
+                    buildLogoFromSVG(
+                        data,
+                        brand.logo,
+                        width,
+                        height,
+                        thickness
+                    );
+
+                    resolve();
+                },
+
+                undefined,
+
+                function(error) {
+
+                    console.warn(
+                        "Logo yüklenemedi:",
+                        error
+                    );
+
+                    statusEl.textContent =
+                        "Logo yüklenemedi — plaka oluşturuldu.";
+
+                    resolve();
+                }
+            );
+        }
+    );
+}
+
+
+/* =========================================================
+   SVG → EXTRUDE
+========================================================= */
+
+function buildLogoFromSVG(
+    data,
+    logoColor,
+    width,
+    height,
+    thickness
+) {
+
+    const meshes = [];
+
+
+    /*
+       KRİTİK KURAL:
+
+       path.toShapes(true) KULLANILMIYOR.
+
+       Özellikle A / O / B gibi harflerde
+       boşlukların dolmaması için:
+
+       SVGLoader.createShapes(path)
+    */
+
+
+    for (
+        let i = 0;
+        i < data.paths.length;
+        i++
+    ) {
+
+        const path =
+            data.paths[i];
+
+
+        /* ---------------------------------------------
+           FILL KONTROLÜ
+        --------------------------------------------- */
+
+        const style =
+            path.userData &&
+            path.userData.style
+                ? path.userData.style
+                : null;
+
+
+        if (
+            style &&
+            (
+                style.fill === "none" ||
+                style.fill === "transparent"
+            )
+        ) {
+            continue;
+        }
+
+
+        let shapes;
+
+        try {
+
+            shapes =
+                THREE.SVGLoader.createShapes(
+                    path
+                );
+
+        } catch (e) {
+
+            console.warn(
+                "SVG shape hatası:",
+                e
+            );
+
+            continue;
+        }
+
+
+        for (
+            let j = 0;
+            j < shapes.length;
+            j++
+        ) {
+
+            const shape =
+                shapes[j];
+
+
+            const geometry =
+                new THREE.ExtrudeGeometry(
+                    shape,
+                    {
+                        depth: 1.2,
+                        steps: 1,
+                        bevelEnabled: false,
+                        curveSegments: 24
+                    }
+                );
+
+
+            const material =
+                new THREE.MeshStandardMaterial({
+
+                    color: new THREE.Color(
+                        logoColor
+                    ),
+
+                    metalness: 0.15,
+
+                    roughness: 0.32,
+
+                    side: THREE.DoubleSide
+                });
+
+
+            const mesh =
+                new THREE.Mesh(
+                    geometry,
+                    material
+                );
+
+
+            meshes.push(mesh);
+        }
+    }
+
+
+    if (!meshes.length) {
+        return;
+    }
+
+
+    /*
+       Logo parçalarını aynı group altında topluyoruz.
+    */
+
+    for (
+        let i = 0;
+        i < meshes.length;
+        i++
+    ) {
+
+        logoGroup.add(
+            meshes[i]
+        );
+    }
+
+
+    /*
+       SVG'nin tüm bounding box'ını hesapla.
+    */
+
+    const box =
+        new THREE.Box3()
+            .setFromObject(
+                logoGroup
+            );
+
+
+    const size =
+        new THREE.Vector3();
+
+    box.getSize(size);
+
+
+    if (
+        size.x <= 0 ||
+        size.y <= 0
+    ) {
+        return;
+    }
+
+
+    /*
+       KRİTİK SINIR:
+
+       Width - 12
+       Height - 12
+    */
+
+    const maxWidth =
+        Math.max(
+            5,
+            width - 12
+        );
+
+    const maxHeight =
+        Math.max(
+            5,
+            height - 12
+        );
+
+
+    const scaleX =
+        maxWidth / size.x;
+
+    const scaleY =
+        maxHeight / size.y;
+
+
+    const finalScale =
+        Math.min(
+            scaleX,
+            scaleY
+        );
+
+
+    logoGroup.scale.set(
+        finalScale,
+        -finalScale,
+        finalScale
+    );
+
+
+    /*
+       Scale sonrasında yeniden bounding box.
+    */
+
+    const scaledBox =
+        new THREE.Box3()
+            .setFromObject(
+                logoGroup
+            );
+
+
+    const scaledCenter =
+        new THREE.Vector3();
+
+    scaledBox.getCenter(
+        scaledCenter
+    );
+
+
+    /*
+       X / Y merkezleme
+    */
+
+    logoGroup.position.x =
+        -scaledCenter.x;
+
+    logoGroup.position.y =
+        -scaledCenter.y;
+
+
+    /*
+       KRİTİK Z KURALI:
+
+       Logo tam olarak thickness seviyesinde.
+    */
+
+    logoGroup.position.z =
+        thickness;
+
+
+    /*
+       SVGLoader koordinat sistemi sebebiyle
+       merkezleme tekrar yapılır.
+    */
+
+    const finalBox =
+        new THREE.Box3()
+            .setFromObject(
+                logoGroup
+            );
+
+
+    const finalCenter =
+        new THREE.Vector3();
+
+    finalBox.getCenter(
+        finalCenter
+    );
+
+
+    logoGroup.position.x -=
+        finalCenter.x;
+
+    logoGroup.position.y -=
+        finalCenter.y;
+}
+
+
+/* =========================================================
+   ÖZEL SVG TEMİZLEME
+========================================================= */
+
+svgFile.addEventListener(
+    "change",
+    function(event) {
+
+        const file =
+            event.target.files[0];
+
+        if (!file) {
+            return;
+        }
+
+
+        if (
+            file.type !== "image/svg+xml" &&
+            !file.name.toLowerCase().endsWith(".svg")
+        ) {
+
+            alert(
+                "Lütfen SVG dosyası seç."
+            );
+
+            return;
+        }
+
+
+        const reader =
+            new FileReader();
+
+
+        reader.onload =
+            function(e) {
+
+                const svgText =
+                    e.target.result;
+
+
+                const cleanSVG =
+                    cleanSVGFile(
+                        svgText
+                    );
+
+
+                loadCustomSVG(
+                    cleanSVG
+                );
+            };
+
+
         reader.readAsText(file);
     }
+);
 
-    function getBaseShape(type, w, h) {
-        const s = new THREE.Shape();
-        const hw = w / 2, hh = h / 2;
-        if (type === 'circle') {
-            s.absarc(0, 0, Math.min(hw, hh), 0, Math.PI * 2);
-        } else if (type === 'oval') {
-            s.absellipse(0, 0, hw, hh, 0, Math.PI * 2);
-        } else if (type === 'diamond') {
-            s.moveTo(0, hh); s.lineTo(hw, 0); s.lineTo(0, -hh); s.lineTo(-hw, 0); s.lineTo(0, hh);
-        } else if (type === 'shield') {
-            s.moveTo(-hw, hh); s.lineTo(hw, hh);
-            s.quadraticCurveTo(hw, -hh * 0.2, 0, -hh);
-            s.quadraticCurveTo(-hw, -hh * 0.2, -hw, hh);
-        } else { 
-            const r = 5;
-            s.moveTo(-hw + r, -hh); s.lineTo(hw - r, -hh); s.quadraticCurveTo(hw, -hh, hw, -hh + r);
-            s.lineTo(hw, hh - r); s.quadraticCurveTo(hw, hh, hw - r, hh);
-            s.lineTo(-hw + r, hh); s.quadraticCurveTo(-hw, hh, -hw, hh - r);
-            s.lineTo(-hw, -hh + r); s.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
+
+/* =========================================================
+   SVG TEMİZLEYİCİ
+========================================================= */
+
+function cleanSVGFile(
+    svgText
+) {
+
+    const parser =
+        new DOMParser();
+
+
+    const doc =
+        parser.parseFromString(
+            svgText,
+            "image/svg+xml"
+        );
+
+
+    /*
+       fill="none" olan tüm elementleri kaldır.
+    */
+
+    const all =
+        doc.querySelectorAll("*");
+
+
+    for (
+        let i = all.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const el =
+            all[i];
+
+
+        const fill =
+            (
+                el.getAttribute("fill") ||
+                ""
+            ).toLowerCase();
+
+
+        const style =
+            (
+                el.getAttribute("style") ||
+                ""
+            ).toLowerCase();
+
+
+        if (
+            fill === "none" ||
+            style.includes(
+                "fill:none"
+            )
+        ) {
+
+            el.remove();
+
+            continue;
         }
-        return s;
+
+
+        /*
+           Beyaz arka plan dikdörtgenlerini
+           kaldır.
+
+           Sadece RECT elementlerini hedefliyoruz;
+           böylece beyaz logo yollarını yanlışlıkla
+           silmiyoruz.
+        */
+
+        if (
+            el.tagName &&
+            el.tagName.toLowerCase() === "rect"
+        ) {
+
+            const white =
+                fill === "#fff" ||
+                fill === "#ffffff" ||
+                fill === "white" ||
+                fill === "rgb(255,255,255)" ||
+                fill === "rgb(255, 255, 255)";
+
+
+            if (white) {
+
+                const svg =
+                    doc.documentElement;
+
+                const vb =
+                    (
+                        svg.getAttribute(
+                            "viewBox"
+                        ) || ""
+                    )
+                    .trim()
+                    .split(/\s+/)
+                    .map(Number);
+
+
+                const w =
+                    parseFloat(
+                        el.getAttribute("width")
+                    ) || 0;
+
+                const h =
+                    parseFloat(
+                        el.getAttribute("height")
+                    ) || 0;
+
+
+                if (
+                    vb.length === 4 &&
+                    w >= vb[2] * 0.9 &&
+                    h >= vb[3] * 0.9
+                ) {
+
+                    el.remove();
+                }
+            }
+        }
     }
 
-    function build3D() {
-        if (!scene || !currentSvgPaths || currentSvgPaths.length === 0) return;
-        if (keychainGroup) scene.remove(keychainGroup);
 
-        keychainGroup = new THREE.Group();
-        
-        let cb = 0x333333; 
-        let cl = 0xffffff; 
-        let baseType = 'rect';
+    /*
+       Görünmez opacity katmanlarını temizle.
+    */
 
-        if (activeMode === 'preset') {
-            const brandInfo = BRANDS[document.getElementById('logoSelect').value];
-            cb = brandInfo.cb;
-            cl = brandInfo.cl;
-            baseType = brandInfo.base;
+    const remaining =
+        doc.querySelectorAll("*");
+
+
+    for (
+        let i = remaining.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const el =
+            remaining[i];
+
+
+        const opacity =
+            parseFloat(
+                el.getAttribute(
+                    "opacity"
+                )
+            );
+
+
+        if (
+            !isNaN(opacity) &&
+            opacity <= 0
+        ) {
+
+            el.remove();
+        }
+    }
+
+
+    return new XMLSerializer()
+        .serializeToString(
+            doc.documentElement
+        );
+}
+
+
+/* =========================================================
+   ÖZEL SVG YÜKLE
+========================================================= */
+
+function loadCustomSVG(
+    svgText
+) {
+
+    const selectedBrand =
+        BRANDS[
+            brandSelect.value
+        ];
+
+
+    const width =
+        Number(widthInput.value);
+
+    const height =
+        Number(heightInput.value);
+
+    const thickness =
+        Number(thicknessInput.value);
+
+
+    if (logoGroup) {
+
+        disposeGroup(logoGroup);
+
+        productGroup.remove(
+            logoGroup
+        );
+    }
+
+
+    logoGroup =
+        new THREE.Group();
+
+    productGroup.add(
+        logoGroup
+    );
+
+
+    const loader =
+        new THREE.SVGLoader();
+
+
+    try {
+
+        const data =
+            loader.parse(
+                svgText
+            );
+
+
+        /*
+           Marka rengi yerine özel SVG'nin
+           kendi renklerini korumak istersen
+           burada path.color kullanılabilir.
+
+           Ancak STL için tek renk daha temiz
+           olduğundan marka rengi kullanıyoruz.
+        */
+
+        for (
+            let i = 0;
+            i < data.paths.length;
+            i++
+        ) {
+
+            const path =
+                data.paths[i];
+
+
+            const style =
+                path.userData &&
+                path.userData.style;
+
+
+            if (
+                style &&
+                (
+                    style.fill === "none" ||
+                    style.fill === "transparent"
+                )
+            ) {
+                continue;
+            }
+
+
+            /*
+               KRİTİK:
+               createShapes(path)
+            */
+
+            const shapes =
+                THREE.SVGLoader.createShapes(
+                    path
+                );
+
+
+            for (
+                let j = 0;
+                j < shapes.length;
+                j++
+            ) {
+
+                const geometry =
+                    new THREE.ExtrudeGeometry(
+                        shapes[j],
+                        {
+                            depth: 1.2,
+                            steps: 1,
+                            bevelEnabled: false,
+                            curveSegments: 24
+                        }
+                    );
+
+
+                const material =
+                    new THREE.MeshStandardMaterial({
+
+                        color:
+                            selectedBrand.logo,
+
+                        metalness: 0.15,
+
+                        roughness: 0.32,
+
+                        side:
+                            THREE.DoubleSide
+                    });
+
+
+                const mesh =
+                    new THREE.Mesh(
+                        geometry,
+                        material
+                    );
+
+
+                logoGroup.add(
+                    mesh
+                );
+            }
         }
 
-        // Çift Yüzey (DoubleSide) eklendi, böylece ön/arka poligonlar kaybolmaz
-        const matBase = new THREE.MeshStandardMaterial({ color: cb, roughness: 0.3, side: THREE.DoubleSide });
-        const matLogo = new THREE.MeshStandardMaterial({ color: cl, roughness: 0.2, side: THREE.DoubleSide });
 
-        const width = parseFloat(document.getElementById('widthInput').value) || 70;
-        const height = parseFloat(document.getElementById('heightInput').value) || 50;
-        const thickness = parseFloat(document.getElementById('thicknessInput').value) || 3.5;
-        const holeDia = parseFloat(document.getElementById('holeInput').value) || 4.5;
-        const extrudeSettings = { depth: thickness, bevelEnabled: false, curveSegments: 32 };
-        
-        // 1. Taban Plakası (Z Ekseni Ofseti Sıfırlandı, 0'dan thickness'a kadar düz uzar)
-        const baseShape = getBaseShape(baseType, width, height);
-        const baseGeo = new THREE.ExtrudeGeometry(baseShape, extrudeSettings);
-        baseGeo.computeBoundingBox();
-        const bx = baseGeo.boundingBox;
-        baseGeo.translate(-(bx.max.x + bx.min.x) / 2, -(bx.max.y + bx.min.y) / 2, 0); // X ve Y'de merkezle, Z sabit
-        const baseMesh = new THREE.Mesh(baseGeo, matBase);
-        keychainGroup.add(baseMesh);
+        const box =
+            new THREE.Box3()
+                .setFromObject(
+                    logoGroup
+                );
 
-        // 2. Tepe Halka Bağlantısı
-        const boxBase = new THREE.Box3().setFromObject(baseMesh);
-        const maxY = boxBase.max.y;
-        
-        const bossRadius = (holeDia / 2) + 3;
-        const bossShape = new THREE.Shape();
-        bossShape.absarc(0, 0, bossRadius, 0, Math.PI * 2, false);
-        const holePath = new THREE.Path();
-        holePath.absarc(0, 0, holeDia / 2, 0, Math.PI * 2, true);
-        bossShape.holes.push(holePath);
 
-        const bossGeo = new THREE.ExtrudeGeometry(bossShape, extrudeSettings);
-        const bossMesh = new THREE.Mesh(bossGeo, matBase);
-        bossMesh.position.set(0, maxY + bossRadius - 1.5, 0); 
-        keychainGroup.add(bossMesh);
+        const size =
+            new THREE.Vector3();
 
-        // 3. Logoları Kusursuz İşleme (Delik kuralı zorunlu hale getirildi)
-        const logoGroup = new THREE.Group();
-        currentSvgPaths.forEach(path => {
-            const shapes = THREE.SVGLoader.createShapes(path); 
-            shapes.forEach(shape => {
-                const geom = new THREE.ExtrudeGeometry(shape, { depth: 1.2, bevelEnabled: false, curveSegments: 32 });
-                logoGroup.add(new THREE.Mesh(geom, matLogo));
-            });
-        });
-        
-        // Logoyu Ortalama ve Sığdırma
-        const lBox = new THREE.Box3().setFromObject(logoGroup);
-        const size = new THREE.Vector3(); lBox.getSize(size);
-        const center = new THREE.Vector3(); lBox.getCenter(center);
-        
-        logoGroup.children.forEach(m => { m.geometry.translate(-center.x, -center.y, 0); });
-        
-        const scale = Math.min((width - 12) / (size.x || 1), (height - 12) / (size.y || 1));
-        logoGroup.scale.set(scale, -scale, 1); 
-        // Logo Z ekseninde direkt taban plakasının kalınlık noktasına yerleştirilir (Havada uçma çözüldü)
-        logoGroup.position.set(0, 0, thickness); 
+        box.getSize(size);
 
-        keychainGroup.add(logoGroup);
-        scene.add(keychainGroup);
+
+        if (
+            size.x > 0 &&
+            size.y > 0
+        ) {
+
+            const scale =
+                Math.min(
+                    (width - 12) / size.x,
+                    (height - 12) / size.y
+                );
+
+
+            logoGroup.scale.set(
+                scale,
+                -scale,
+                scale
+            );
+
+
+            const scaledBox =
+                new THREE.Box3()
+                    .setFromObject(
+                        logoGroup
+                    );
+
+
+            const center =
+                new THREE.Vector3();
+
+
+            scaledBox.getCenter(
+                center
+            );
+
+
+            logoGroup.position.x =
+                -center.x;
+
+            logoGroup.position.y =
+                -center.y;
+
+
+            /*
+               Logo Z = thickness
+            */
+
+            logoGroup.position.z =
+                thickness;
+        }
+
+
+        statusEl.textContent =
+            "Özel SVG başarıyla işlendi.";
+
+    } catch (error) {
+
+        console.error(error);
+
+        statusEl.textContent =
+            "SVG işlenirken hata oluştu.";
+    }
+}
+
+
+/* =========================================================
+   ARAYÜZ
+========================================================= */
+
+function updateInterface(
+    brand,
+    width,
+    height,
+    thickness
+) {
+
+    brandNameEl.textContent =
+        brand.name;
+
+    colorPreview.style.background =
+        brand.base;
+
+    dimensionText.textContent =
+        width +
+        " × " +
+        height +
+        " mm";
+
+    thicknessText.textContent =
+        thickness +
+        " mm";
+}
+
+
+/* =========================================================
+   MODELİ MERKEZLE
+========================================================= */
+
+function centerProduct() {
+
+    if (!productGroup) {
+        return;
     }
 
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-    }
 
-    function downloadSTL() {
-        if (!keychainGroup) { alert("Model henüz yüklenmedi!"); return; }
-        const exporter = new THREE.STLExporter();
-        const result = exporter.parse(keychainGroup, { binary: true });
-        const blob = new Blob([result], { type: 'application/octet-stream' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `${activeMode === 'preset' ? document.getElementById('logoSelect').value : 'ozel_logo'}_anahtarlik.stl`;
-        link.click();
-    }
+    const box =
+        new THREE.Box3()
+            .setFromObject(
+                productGroup
+            );
 
-    window.onload = init3D;
+
+    const center =
+        new THREE.Vector3();
+
+
+    box.getCenter(
+        center
+    );
+
+
+    productGroup.position.x =
+        -center.x;
+
+    productGroup.position.y =
+        -center.y;
+
+    productGroup.position.z =
+        -center.z;
+}
+
+
+/* =========================================================
+   MARKA DEĞİŞİMİ
+========================================================= */
+
+brandSelect.addEventListener(
+    "change",
+    function() {
+
+        svgFile.value = "";
+
+        createModel();
+    }
+);
+
+
+/* =========================================================
+   PARAMETRE DEĞİŞİMİ
+========================================================= */
+
+[
+    widthInput,
+    heightInput,
+    thicknessInput,
+    holeInput
+].forEach(
+    function(input) {
+
+        input.addEventListener(
+            "input",
+            function() {
+
+                createModel();
+            }
+        );
+    }
+);
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+document.getElementById(
+    "resetBtn"
+).addEventListener(
+    "click",
+    function() {
+
+        brandSelect.value =
+            "tesla";
+
+        widthInput.value =
+            70;
+
+        heightInput.value =
+            45;
+
+        thicknessInput.value =
+            3;
+
+        holeInput.value =
+            5;
+
+        svgFile.value =
+            "";
+
+        createModel();
+    }
+);
+
+
+/* =========================================================
+   STL EXPORT
+========================================================= */
+
+document.getElementById(
+    "downloadBtn"
+).addEventListener(
+    "click",
+    function() {
+
+        if (!productGroup) {
+            return;
+        }
+
+
+        statusEl.textContent =
+            "STL hazırlanıyor...";
+
+
+        /*
+           STLExporter sahnedeki meshleri
+           geometrik olarak dışa aktarır.
+        */
+
+        const exporter =
+            new THREE.STLExporter();
+
+
+        const result =
+            exporter.parse(
+                productGroup,
+                {
+                    binary: true
+                }
+            );
+
+
+        const blob =
+            new Blob(
+                [result],
+                {
+                    type:
+                        "application/octet-stream"
+                }
+            );
+
+
+        const url =
+            URL.createObjectURL(
+                blob
+            );
+
+
+        const a =
+            document.createElement(
+                "a"
+            );
+
+
+        const brand =
+            BRANDS[
+                brandSelect.value
+            ];
+
+
+        const width =
+            widthInput.value;
+
+        const height =
+            heightInput.value;
+
+        const thickness =
+            thicknessInput.value;
+
+
+        a.href = url;
+
+        a.download =
+            "anahtarlik_" +
+            brand.slug +
+            "_" +
+            width +
+            "x" +
+            height +
+            "x" +
+            thickness +
+            "mm.stl";
+
+
+        document.body.appendChild(a);
+
+        a.click();
+
+        document.body.removeChild(a);
+
+
+        URL.revokeObjectURL(
+            url
+        );
+
+
+        statusEl.textContent =
+            "STL başarıyla hazırlandı.";
+    }
+);
+
+
+/* =========================================================
+   MEMORY TEMİZLEME
+========================================================= */
+
+function disposeGroup(
+    group
+) {
+
+    group.traverse(
+        function(object) {
+
+            if (
+                object.geometry
+            ) {
+
+                object.geometry.dispose();
+            }
+
+
+            if (
+                object.material
+            ) {
+
+                if (
+                    Array.isArray(
+                        object.material
+                    )
+                ) {
+
+                    object.material.forEach(
+                        function(material) {
+
+                            material.dispose();
+                        }
+                    );
+
+                } else {
+
+                    object.material.dispose();
+                }
+            }
+        }
+    );
+}
+
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+window.addEventListener(
+    "resize",
+    function() {
+
+        if (!renderer) {
+            return;
+        }
+
+
+        const width =
+            container.clientWidth;
+
+        const height =
+            container.clientHeight;
+
+
+        camera.aspect =
+            width / height;
+
+
+        camera.updateProjectionMatrix();
+
+
+        renderer.setSize(
+            width,
+            height
+        );
+    }
+);
+
+
+/* =========================================================
+   RENDER LOOP
+========================================================= */
+
+function animate() {
+
+    requestAnimationFrame(
+        animate
+    );
+
+
+    controls.update();
+
+
+    renderer.render(
+        scene,
+        camera
+    );
+}
+
+
+/* =========================================================
+   BAŞLAT
+========================================================= */
+
+init();
+
 </script>
 
 </body>
