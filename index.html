@@ -79,7 +79,6 @@
     let currentSvgShapes = null;
     let currentLogoName = "tesla";
 
-    // 3D baskı için optimize edilmiş saf hat/kabartma SVG verileri
     const presetLogos = {
         tesla: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><path d="M150 40 C150 40 175 75 210 85 C175 95 150 160 150 230 C150 160 125 95 90 85 C125 75 150 40 150 40 Z" fill="#fff"/><path d="M75 50 L225 50 L225 65 L75 65 Z" fill="#fff"/></svg>',
         bmw: '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><circle cx="150" cy="150" r="110" fill="none" stroke="#fff" stroke-width="16"/><path d="M150 40 A110 110 0 0 1 260 150 L150 150 Z" fill="#fff"/><path d="M150 260 A110 110 0 0 1 40 150 L150 150 Z" fill="#fff"/></svg>',
@@ -159,7 +158,6 @@
         const thickness = parseFloat(document.getElementById('thicknessInput').value) || 3.5;
         const holeDia = parseFloat(document.getElementById('holeInput').value) || 4.5;
 
-        // 1. Ana Plaka ve Üst Halka Çıkıntısı
         const rectShape = new THREE.Shape();
         const hw = width / 2;
         const hh = height / 2;
@@ -193,7 +191,6 @@
         plateMesh.position.set(0, 0, thickness / 2);
         keychainGroup.add(plateMesh);
 
-        // 2. SVG Logoyu Şık Kabartma Olarak Ekle
         const logoGroup = new THREE.Group();
         currentSvgShapes.forEach(path => {
             const shapes = path.toShapes(true);
