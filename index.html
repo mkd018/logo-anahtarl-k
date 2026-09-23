@@ -124,7 +124,6 @@
         }
     }
 
-    // Saf matematiksel ve hatasız logo oluşturucu (Hata vermemesi için noktalarla çizim)
     function createLogoGeometry(logoType) {
         const group = new THREE.Group();
         const mat = new THREE.MeshStandardMaterial({ color: 0x00a8cc, roughness: 0.2 });
@@ -199,8 +198,9 @@
                 box.moveTo(-1.5, 0); box.lineTo(1.5, 0); box.lineTo(1.5, 18); box.lineTo(-1.5, 18); box.lineTo(-1.5, 0);
                 
                 const geom = new THREE.ExtrudeGeometry(box, { depth: 1.2, bevelEnabled: false });
-                geom.rotateZ(-angle); // Şekli değil, geometriyi döndürürüz (hatasızdır)
-                group.add(new THREE.Mesh(geom, mat));
+                const mesh = new THREE.Mesh(geom, mat);
+                mesh.rotation.z = -angle; 
+                group.add(mesh);
             }
         }
         return group;
@@ -240,7 +240,7 @@
         const holeDia = parseFloat(document.getElementById('holeInput').value) || 4.5;
         const logoType = document.getElementById('logoSelect').value;
 
-        // 1. Ana Plaka
+        // 1. Ana Plaka Geometrisi
         const rectShape = new THREE.Shape();
         const hw = width / 2;
         const hh = height / 2;
@@ -258,23 +258,34 @@
 
         const bossX = 0;
         const bossY = hh - 4;
-        const holePath = new THREE.Path();
-        holePath.absarc(bossX, bossY, holeDia / 2, 0, Math.PI * 2, true);
-        rectShape.holes.push(holePath);
-
-        const bossShape = new THREE.Shape();
-        bossShape.absarc(bossX, bossY, (holeDia / 2) + 3, 0, Math.PI * 2, false);
-        bossShape.holes.push(holePath);
+        const holePath1 = new THREE.Path();
+        holePath1.absarc(bossX, bossY, holeDia / 2, 0, Math.PI * 2, true);
+        rectShape.holes.push(holePath1);
 
         const extrudeSettings = { depth: thickness, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.15, bevelThickness: 0.15 };
-        
-        const plateGeo = new THREE.ExtrudeGeometry([rectShape, bossShape], extrudeSettings);
+        const plateGeo = new THREE.ExtrudeGeometry(rectShape, extrudeSettings);
         plateGeo.center();
         const plateMesh = new THREE.Mesh(plateGeo, plateMaterial);
         plateMesh.position.set(0, 0, thickness / 2);
         keychainGroup.add(plateMesh);
 
-        // 2. Logo Grubu
+        // 2. Halka Kulakçığı Geometrisi (Ayrı çizilerek çökme önlendi)
+        const bossShape = new THREE.Shape();
+        bossShape.absarc(bossX, bossY, (holeDia / 2) + 3, 0, Math.PI * 2, false);
+        const holePath2 = new THREE.Path();
+        holePath2.absarc(bossX, bossY, holeDia / 2, 0, Math.PI * 2, true);
+        bossShape.holes.push(holePath2);
+
+        const bossGeo = new THREE.ExtrudeGeometry(bossShape, extrudeSettings);
+        const bossMesh = new THREE.Mesh(bossGeo, plateMaterial);
+        bossMesh.position.set(0, 0, thickness / 2);
+        
+        // Kulakçığı plakaya ortalamak için pozisyon ofseti (plateGeo.center() işlemine uyum)
+        bossMesh.position.x = bossX;
+        bossMesh.position.y = bossY + 4; 
+        keychainGroup.add(bossMesh);
+
+        // 3. Logo Grubu
         let logoGroup;
         if (activeMode === 'custom' && customSvgShapes) {
             logoGroup = new THREE.Group();
