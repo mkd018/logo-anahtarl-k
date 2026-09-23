@@ -32,7 +32,7 @@
     
     <div class="form-group full-width" style="flex-direction: column; align-items: flex-start;">
         <label for="logoSelect">Hazır Logo Seç:</label>
-        <select id="logoSelect" onchange="updateKeychain()" style="width: 100%; text-align: left;">
+        <select id="logoSelect" onchange="onLogoChange()" style="width: 100%; text-align: left;">
             <option value="tesla">Tesla Logo</option>
             <option value="bmw">BMW Logo</option>
             <option value="ford">Ford Logo</option>
@@ -75,6 +75,7 @@
 
 <script>
     let scene, camera, renderer, controls, keychainGroup;
+    let activeMode = 'preset'; // 'preset' veya 'custom'
     let customSvgShapes = null;
 
     function init3D() {
@@ -104,7 +105,14 @@
         animate();
     }
 
-    // Matematiksel ve Kararlı 3D Logo Geometrileri Oluşturucu
+    function onLogoChange() {
+        activeMode = 'preset';
+        document.getElementById('svgUpload').value = ""; // Dosya seçimi sıfırlanır
+        document.getElementById('status').innerText = "Hazır logo yüklendi!";
+        updateKeychain();
+    }
+
+    // Matematiksel ve Detaylı 3D Logo Geometrileri
     function createLogoGeometry(logoType) {
         const group = new THREE.Group();
         const mat = new THREE.MeshStandardMaterial({ color: 0x00a8cc, roughness: 0.2 });
@@ -115,7 +123,6 @@
         }
 
         if (logoType === 'tesla') {
-            // Tesla Kalkanı ve Çizgisi
             const path1 = new THREE.Shape();
             path1.moveTo(0, 18);
             path1.bezierCurveTo(8, 12, 18, 2, 28, -5);
@@ -129,67 +136,67 @@
             addMesh(bar);
         } 
         else if (logoType === 'bmw') {
-            // BMW Çemberi ve Dörtlü Dilim Hatları
+            // Dış Çember
             const ring = new THREE.Shape();
-            ring.absarc(0, 0, 20, 0, Math.PI * 2, false);
+            ring.absarc(0, 0, 22, 0, Math.PI * 2, false);
             const hole = new THREE.Path();
-            hole.absarc(0, 0, 16, 0, Math.PI * 2, true);
+            hole.absarc(0, 0, 18, 0, Math.PI * 2, true);
             ring.holes.push(hole);
             addMesh(ring);
 
-            // Çapraz ayırıcı çizgiler
+            // İç Haç Çizgileri
             const lineH = new THREE.Shape();
-            lineH.absrect(-16, -1.5, 32, 3);
+            lineH.absrect(-18, -1.5, 36, 3);
             addMesh(lineH);
             const lineV = new THREE.Shape();
-            lineV.absrect(-1.5, -16, 3, 32);
+            lineV.absrect(-1.5, -18, 3, 36);
             addMesh(lineV);
         } 
         else if (logoType === 'ford') {
-            // Ford Ovali ve İç Kıvrım Yazı Efekti
+            // Oval Çerçeve
             const oval = new THREE.Shape();
-            oval.absellipse(0, 0, 26, 14, 0, Math.PI * 2, false, 0);
+            oval.absellipse(0, 0, 28, 14, 0, Math.PI * 2, false, 0);
             const ovalHole = new THREE.Path();
-            ovalHole.absellipse(0, 0, 22, 10, 0, Math.PI * 2, true, 0);
+            ovalHole.absellipse(0, 0, 24, 10, 0, Math.PI * 2, true, 0);
             oval.holes.push(ovalHole);
             addMesh(oval);
 
-            // İç oval yazı çizgisi
-            const innerTextBar = new THREE.Shape();
-            innerTextBar.absrect(-14, -3, 28, 6);
-            addMesh(innerTextBar);
+            // İç Yazı Plakası
+            const innerBar = new THREE.Shape();
+            innerBar.absrect(-16, -3, 32, 6);
+            addMesh(innerBar);
         } 
         else if (logoType === 'audi') {
-            // Audi 4 Halkası
+            // 4 Halkalı Yapı
             for (let i = -1.5; i <= 1.5; i += 1) {
                 const ring = new THREE.Shape();
-                ring.absarc(i * 11, 0, 10, 0, Math.PI * 2, false);
+                ring.absarc(i * 10, 0, 9, 0, Math.PI * 2, false);
                 const h = new THREE.Path();
-                h.absarc(i * 11, 0, 7.5, 0, Math.PI * 2, true);
+                h.absarc(i * 10, 0, 6.5, 0, Math.PI * 2, true);
                 ring.holes.push(h);
                 addMesh(ring);
             }
         } 
         else if (logoType === 'mercedes') {
-            // Mercedes Çemberi ve Üçlü Yıldız
+            // Dış Çember
             const ring = new THREE.Shape();
-            ring.absarc(0, 0, 20, 0, Math.PI * 2, false);
+            ring.absarc(0, 0, 21, 0, Math.PI * 2, false);
             const hole = new THREE.Path();
-            hole.absarc(0, 0, 17, 0, Math.PI * 2, true);
+            hole.absarc(0, 0, 18, 0, Math.PI * 2, true);
             ring.holes.push(hole);
             addMesh(ring);
 
-            // Üç kollu yıldız
-            for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2 / 3)) {
-                const arm = new THREE.Shape();
-                arm.moveTo(0, 0);
-                arm.lineTo(Math.sin(angle) * 16, Math.cos(angle) * 16);
-                // Çizgi kalınlığı için basit kutu
+            // Üç Kollu Yıldız Kollar
+            for (let i = 0; i < 3; i++) {
+                const angle = i * ((2 * Math.PI) / 3);
                 const blade = new THREE.Shape();
-                blade.absrect(-1.5, 0, 3, 16);
-                // Döndür
-                blade.rotateZ(-angle);
-                addMesh(blade);
+                blade.moveTo(0, 0);
+                blade.lineTo(Math.sin(angle) * 17, Math.cos(angle) * 17);
+                // Kalınlık kazandırmak için
+                const box = new THREE.Shape();
+                box.absrect(-1.5, 0, 3, 17);
+                box.rotateZ(-angle);
+                addMesh(box);
             }
         }
         return group;
@@ -200,11 +207,16 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
-            const loader = new THREE.SVGLoader();
-            const svgData = loader.parse(e.target.result);
-            customSvgShapes = svgData.paths;
-            document.getElementById('status').innerText = "Özel SVG başarıyla yüklendi!";
-            updateKeychain();
+            try {
+                const loader = new THREE.SVGLoader();
+                const svgData = loader.parse(e.target.result);
+                customSvgShapes = svgData.paths;
+                activeMode = 'custom';
+                document.getElementById('status').innerText = "Özel SVG başarıyla yüklendi!";
+                updateKeychain();
+            } catch (err) {
+                document.getElementById('status').innerText = "SVG okuma hatası!";
+            }
         };
         reader.readAsText(file);
     }
@@ -256,9 +268,9 @@
         plateMesh.position.set(0, 0, thickness / 2);
         keychainGroup.add(plateMesh);
 
-        // 2. Logo Geometrisi (Hazır veya Yüklenen Özel SVG)
+        // 2. Logo Grubu (Hazır logo veya Yüklenen özel SVG)
         let logoGroup;
-        if (customSvgShapes && document.getElementById('svgUpload').files.length > 0) {
+        if (activeMode === 'custom' && customSvgShapes) {
             logoGroup = new THREE.Group();
             const customMat = new THREE.MeshStandardMaterial({ color: 0x00a8cc, roughness: 0.2 });
             customSvgShapes.forEach(path => {
