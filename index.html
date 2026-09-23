@@ -7,6 +7,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
@@ -73,12 +75,11 @@
     let scene, camera, renderer, controls, keychainGroup;
     let activeMode = 'preset'; 
     let customSvgShapes = null;
+    let globalFont = null;
 
-    // Kurumsal Renk Kodları
     const C_BLK = 0x222222, C_WHT = 0xffffff, C_RED = 0xcc1111, C_BLU = 0x0044cc;
 
-    // Matematiksel Geometri Yardımcıları (Kompakt ve hatasız çizim için)
-    let W = 30, H = 30; // Varsayılan yarıçap (güncellenecek)
+    let W = 30, H = 30; 
     const P = (pts, isHole=false) => {
         const s = isHole ? new THREE.Path() : new THREE.Shape();
         s.moveTo(pts[0]*W, pts[1]*H);
@@ -105,7 +106,7 @@
         }); return out;
     };
 
-    // Tam 20 Adet Aracın Matematiksel Geometrisi ve Renkleri
+    // 20 Markanın Geometrileri ve Gerçek Yazı Metinleri (TextGeometry için)
     const BRANDS = {
         opel: { name: "Opel", cb: C_BLK, cl: C_WHT, 
             base: ()=>C(1), logo: ()=>[Ring(0.9, 0.75), P([-0.7,0.1, -0.1,0.1, -0.3,-0.1, 0.7,-0.1, 0.1,-0.1, 0.3,0.1])] },
@@ -114,11 +115,11 @@
                 let sh = P([0,0.85, 0.45,0, 0,-0.85, -0.45,0]); sh.holes.push(P([0,0.55, 0.25,0, 0,-0.55, -0.25,0], true));
                 return [sh, P([0,0.25, 0.1,0, 0,-0.25, -0.1,0])]; } },
         fiat: { name: "Fiat", cb: C_RED, cl: C_WHT, 
-            base: ()=>C(1), logo: ()=>[Ring(0.95, 0.85), Rect(-0.7,-0.2,0.2,0.4), Rect(-0.4,-0.2,0.1,0.4), Rect(0.2,-0.2,0.1,0.4), Rect(0.4,-0.2,0.3,0.1), Rect(0.5,-0.2,0.1,0.4), P([-0.2,-0.2, 0.1,-0.2, 0,-0.1, 0,0.2, -0.1,0.2])] },
+            base: ()=>C(1), logo: ()=>[Ring(0.95, 0.85)], texts: [{ text: "FIAT", size: 0.45, x: 0, y: 0 }] },
         mercedes: { name: "Mercedes", cb: C_BLK, cl: C_WHT, 
             base: ()=>C(1), logo: ()=>[Ring(0.9, 0.8), P([0,0.8, 0.08,0.08, 0.7,-0.4, 0,-0.08, -0.7,-0.4, -0.08,0.08])] },
         tesla: { name: "Tesla", cb: C_WHT, cl: C_RED, 
-            base: ()=>P([-0.8,0.9, 0.8,0.9, 0.8,-0.2, 0,-1, -0.8,-0.2]), logo: ()=>[P([-0.6,0.5, 0.6,0.5, 0.6,0.65, -0.6,0.65]), P([-0.5,0.3, 0.5,0.3, 0.4,0.2, 0.1,0.2, 0.1,-0.5, -0.1,-0.5, -0.1,0.2, -0.4,0.2])] },
+            base: ()=>P([-0.8,0.9, 0.8,0.9, 0.8,-0.2, 0,-1, -0.8,-0.2]), logo: ()=>[P([-0.6,0.5, 0.6,0.5, 0.6,0.65, -0.6,0.65]), P([-0.5,0.3, 0.5,0.3, 0.4,0.2, 0.1,0.2, 0.1,-0.5, -0.1,-0.5, -0.1,0.2, -0.4,0.2])], texts: [{ text: "TESLA", size: 0.18, x: 0, y: -0.7 }] },
         honda: { name: "Honda", cb: C_RED, cl: C_WHT, 
             base: ()=>P([-0.8,0.9, 0.8,0.9, 0.8,-0.6, 0.4,-0.9, -0.4,-0.9, -0.8,-0.6]), logo: ()=>{
                 let sh = P([-0.7,0.8, 0.7,0.8, 0.7,-0.5, 0.3,-0.8, -0.3,-0.8, -0.7,-0.5]); sh.holes.push(P([-0.6,0.7, 0.6,0.7, 0.6,-0.45, 0.25,-0.7, -0.25,-0.7, -0.6,-0.45], true));
@@ -132,34 +133,34 @@
         suzuki: { name: "Suzuki", cb: C_RED, cl: C_WHT, 
             base: ()=>P([-0.7,0.8, 0.7,0.8, 0.7,0.1, -0.2,-0.1, 0.7,-0.3, 0.7,-0.8, -0.7,-0.8, -0.7,-0.1, 0.2,0.1, -0.7,0.3]), logo: ()=>[P([-0.5,0.6, 0.5,0.6, 0.5,0.25, -0.4,0.05, 0.3,-0.1, 0.5,-0.15, 0.5,-0.6, -0.5,-0.6, -0.5,-0.25, 0.4,-0.05, -0.3,0.1, -0.5,0.15])] },
         ford: { name: "Ford", cb: C_BLU, cl: C_WHT, 
-            base: ()=>Oval(1, 0.6), logo: ()=>[ORing(0.95, 0.55, 0.85, 0.45), Rect(-0.6,-0.1,0.2,0.3), Rect(-0.3,-0.1,0.2,0.3), Rect(0,-0.1,0.2,0.3), Rect(0.3,-0.1,0.2,0.3)] },
+            base: ()=>Oval(1, 0.6), logo: ()=>[ORing(0.95, 0.55, 0.85, 0.45)], texts: [{ text: "Ford", size: 0.4, x: 0, y: 0 }] },
         bmw: { name: "BMW", cb: C_BLK, cl: C_WHT, 
             base: ()=>C(1), logo: ()=>{
-                let p = [Ring(0.95, 0.65), Ring(0.5, 0.45), Rect(-0.7,0.7,0.2,0.2), Rect(-0.1,0.7,0.2,0.2), Rect(0.5,0.7,0.2,0.2)];
+                let p = [Ring(0.95, 0.65), Ring(0.5, 0.45)];
                 let s1 = new THREE.Shape(); s1.moveTo(0,0); s1.arc(0,0, 0.45*W, 0, Math.PI/2); p.push(s1);
                 let s2 = new THREE.Shape(); s2.moveTo(0,0); s2.arc(0,0, 0.45*W, Math.PI, Math.PI*1.5); p.push(s2);
                 return p;
-            } 
+            }, texts: [{ text: "M", size: 0.3, x: 0, y: 0.77 }, { text: "B", size: 0.3, x: -0.65, y: 0.45, r: 0.6 }, { text: "W", size: 0.3, x: 0.65, y: 0.45, r: -0.6 }] 
         },
         peugeot: { name: "Peugeot", cb: C_BLK, cl: C_WHT, 
             base: ()=>P([-0.9,0.9, 0.9,0.9, 0.9,-0.2, 0,-1, -0.9,-0.2]), logo: ()=>{
                 let sh = P([-0.8,0.8, 0.8,0.8, 0.8,-0.15, 0,-0.85, -0.8,-0.15]); sh.holes.push(P([-0.7,0.7, 0.7,0.7, 0.7,-0.1, 0,-0.75, -0.7,-0.1], true));
-                return [sh, P([-0.3,-0.5, -0.5,0.3, -0.2,0.6, 0.2,0.6, 0.5,0.2, 0.2,-0.2, 0.5,-0.6, 0.1,-0.6, -0.1,-0.3])]; } },
+                return [sh, P([-0.3,-0.5, -0.5,0.3, -0.2,0.6, 0.2,0.6, 0.5,0.2, 0.2,-0.2, 0.5,-0.6, 0.1,-0.6, -0.1,-0.3])]; }, texts: [{ text: "PEUGEOT", size: 0.16, x: 0, y: 0.73 }] },
         toyota: { name: "Toyota", cb: C_BLK, cl: C_WHT, 
             base: ()=>Oval(1, 0.7), logo: ()=>[ORing(0.9, 0.6, 0.75, 0.45), ORing(0.55, 0.4, 0.4, 0.25), ORing(0.2, 0.55, 0.05, 0.15)] },
         skoda: { name: "Skoda", cb: C_BLK, cl: C_WHT, 
             base: ()=>C(1), logo: ()=>[Ring(0.9, 0.75), P([-0.5,-0.2, 0,0.5, 0.6,0.6, 0.4,0.1, 0.7,-0.1, 0.3,-0.4, -0.3,-0.4])] },
         nissan: { name: "Nissan", cb: C_BLK, cl: C_WHT, 
-            base: ()=>C(1), logo: ()=>[Ring(0.9, 0.75), Rect(-1.1,-0.25, 2.2,0.5), Rect(-0.8,-0.1,0.2,0.2), Rect(-0.5,-0.1,0.2,0.2), Rect(-0.2,-0.1,0.4,0.2), Rect(0.3,-0.1,0.2,0.2), Rect(0.6,-0.1,0.2,0.2)] },
+            base: ()=>C(1), logo: ()=>[Ring(0.9, 0.75), Rect(-1.1,-0.25, 2.2,0.5)], texts: [{ text: "NISSAN", size: 0.28, x: 0, y: 0 }] },
         mitsubishi: { name: "Mitsubishi", cb: C_RED, cl: C_WHT, 
             base: ()=>P([0,1, 0.45,0.2, 1,-0.8, 0.3,-0.8, 0,-0.2, -0.3,-0.8, -1,-0.8, -0.45,0.2]), logo: ()=>[P([0,0.85, 0.3,0.3, 0,-0.25, -0.3,0.3]), P([0.1,-0.35, 0.4,-0.35, 0.8,-0.7, 0.2,-0.7]), P([-0.1,-0.35, -0.4,-0.35, -0.8,-0.7, -0.2,-0.7])] },
         mini: { name: "Mini", cb: C_BLK, cl: C_WHT, 
-            base: ()=>[C(0.6), Rect(-1.2, -0.3, 2.4, 0.6)], logo: ()=>[Ring(0.5, 0.4), Rect(-1.1,0.1,0.4,0.1), Rect(0.7,0.1,0.4,0.1), Rect(-1.1,-0.2,0.4,0.1), Rect(0.7,-0.2,0.4,0.1), Rect(-0.3,-0.1,0.1,0.2), Rect(-0.1,-0.1,0.1,0.2), Rect(0.1,-0.1,0.1,0.2)] },
+            base: ()=>[C(0.6), Rect(-1.2, -0.3, 2.4, 0.6)], logo: ()=>[Ring(0.5, 0.4)], texts: [{ text: "MINI", size: 0.28, x: 0, y: 0 }] },
         audi: { name: "Audi", cb: C_BLK, cl: C_WHT, 
             base: ()=>[offsetS(C(0.55), -0.45*W), offsetS(C(0.55), -0.15*W), offsetS(C(0.55), 0.15*W), offsetS(C(0.55), 0.45*W)], 
             logo: ()=>[offsetS(Ring(0.5, 0.4), -0.45*W), offsetS(Ring(0.5, 0.4), -0.15*W), offsetS(Ring(0.5, 0.4), 0.15*W), offsetS(Ring(0.5, 0.4), 0.45*W)] },
         volvo: { name: "Volvo", cb: C_BLK, cl: C_WHT, 
-            base: ()=>C(0.85), logo: ()=>[Ring(0.75, 0.65), P([0.5,0.5, 0.9,0.9, 0.9,0.4, 1,0.4, 1,1, 0.4,1, 0.4,0.9, 0.8,0.9, 0.4,0.5]), Rect(-0.9,-0.2, 1.8,0.4), Rect(-0.7,-0.1,0.2,0.2), Rect(-0.4,-0.1,0.2,0.2), Rect(-0.1,-0.1,0.2,0.2), Rect(0.2,-0.1,0.2,0.2), Rect(0.5,-0.1,0.2,0.2)] }
+            base: ()=>C(0.85), logo: ()=>[Ring(0.75, 0.65), P([0.5,0.5, 0.9,0.9, 0.9,0.4, 1,0.4, 1,1, 0.4,1, 0.4,0.9, 0.8,0.9, 0.4,0.5]), Rect(-0.9,-0.2, 1.8,0.4)], texts: [{ text: "VOLVO", size: 0.22, x: 0, y: 0 }] }
     };
 
     function init3D() {
@@ -185,7 +186,6 @@
         dirLight.position.set(10, -20, 50);
         scene.add(dirLight);
 
-        // UI Select Menüsünü Doldur
         const sel = document.getElementById('logoSelect');
         Object.keys(BRANDS).forEach(k => {
             let opt = document.createElement('option');
@@ -193,7 +193,15 @@
             sel.appendChild(opt);
         });
 
-        safeUpdate();
+        // 3D Yazı Fontunu Global Olarak Yükle
+        const loader = new THREE.FontLoader();
+        loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', function (font) {
+            globalFont = font;
+            safeUpdate();
+        }, undefined, function() {
+            document.getElementById('status').innerText = "Font yüklenemedi!";
+        });
+
         animate();
     }
 
@@ -206,6 +214,7 @@
     }
 
     function safeUpdate() {
+        if (!globalFont) return;
         try { updateKeychain(); } 
         catch (e) {
             console.error("Çizim Hatası: ", e);
@@ -256,41 +265,67 @@
             const matLogo = new THREE.MeshStandardMaterial({ color: b.cl, roughness: 0.2 });
             const matBMWBlue = new THREE.MeshStandardMaterial({ color: C_BLU, roughness: 0.2 });
 
-            // 1. Orijinal Kesimli Ana Plaka
+            // 1. Ana Taban Plakası (Çökme yapmaması için Z=0'da bırakılır)
+            const baseGroup = new THREE.Group();
             let bases = b.base();
             if (!Array.isArray(bases)) bases = [bases];
             bases.forEach(shape => {
                 const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
                 const mesh = new THREE.Mesh(geo, matBase);
-                // NOT: Z ekseninde kaydırma yapılmıyor (0'dan thickness'a kadar uzar)
-                keychainGroup.add(mesh);
+                baseGroup.add(mesh);
             });
+            keychainGroup.add(baseGroup);
 
-            // 2. Tepe Halka Kulakçığı (Tüm modellere tam hizalı eklenir)
+            // 2. Dinamik Halka Bağlantısı (Kopukluğu çözen Box3 BoundingBox matematiği)
+            const box = new THREE.Box3().setFromObject(baseGroup);
+            const maxY = box.max.y; // Plakanın bittiği en uç tepe noktası
+
+            const bossRadius = (holeDia / 2) + 3;
             const bossShape = new THREE.Shape();
-            bossShape.absarc(0, H + 2, (holeDia / 2) + 3, 0, Math.PI * 2, false);
+            bossShape.absarc(0, 0, bossRadius, 0, Math.PI * 2, false);
             const holePath = new THREE.Path();
-            holePath.absarc(0, H + 2, holeDia / 2, 0, Math.PI * 2, true);
+            holePath.absarc(0, 0, holeDia / 2, 0, Math.PI * 2, true);
             bossShape.holes.push(holePath);
 
             const bossGeo = new THREE.ExtrudeGeometry(bossShape, extrudeSettings);
             const bossMesh = new THREE.Mesh(bossGeo, matBase);
+            // Halka, plakanın tepe noktasına tam kaynayacak şekilde (-1.5mm bindirmeli) yerleştirilir
+            bossMesh.position.set(0, maxY + bossRadius - 1.5, 0); 
             keychainGroup.add(bossMesh);
 
-            // 3. Renkli Logo Kabartması
+            // 3. Renkli Logo Sembolleri
             let logos = b.logo();
             logos.forEach((shape, idx) => {
                 const geo = new THREE.ExtrudeGeometry(shape, logoExtrude);
                 let useMat = matLogo;
                 if (b.name === "BMW" && idx >= logos.length - 2) useMat = matBMWBlue;
-                
                 const mesh = new THREE.Mesh(geo, useMat);
-                mesh.position.z = thickness; // Plakanın Z yüksekliğinin tam bittiği yerden başlar
+                mesh.position.z = thickness; 
                 keychainGroup.add(mesh);
             });
+
+            // 4. Gerçek 3D Yazılar (TextGeometry)
+            if (b.texts && globalFont) {
+                b.texts.forEach(t => {
+                    const tGeo = new THREE.TextGeometry(t.text, {
+                        font: globalFont, size: t.size * W, height: 1.2, curveSegments: 4
+                    });
+                    tGeo.computeBoundingBox();
+                    const tW = tGeo.boundingBox.max.x - tGeo.boundingBox.min.x;
+                    const tH = tGeo.boundingBox.max.y - tGeo.boundingBox.min.y;
+                    
+                    // Yazıyı önce kendi ekseninde merkeze alıyoruz
+                    tGeo.translate(-tW/2, -tH/2, 0); 
+                    
+                    const tMesh = new THREE.Mesh(tGeo, matLogo);
+                    tMesh.position.set(t.x * W, t.y * H, thickness);
+                    if (t.r) tMesh.rotation.z = t.r;
+                    keychainGroup.add(tMesh);
+                });
+            }
         } 
         else {
-            // Özel SVG Yükleme Modu (Dikdörtgen standart plaka)
+            // Özel SVG Yükleme Modu
             const matBase = new THREE.MeshStandardMaterial({ color: C_BLK, roughness: 0.3 });
             const matLogo = new THREE.MeshStandardMaterial({ color: C_WHT, roughness: 0.2 });
 
@@ -299,14 +334,23 @@
             rectShape.lineTo(W, H); rectShape.quadraticCurveTo(W, H, W - 5, H); rectShape.lineTo(-W + 5, H);
             rectShape.quadraticCurveTo(-W, H, -W, H - 5); rectShape.lineTo(-W, -H + 5); rectShape.quadraticCurveTo(-W, -H, -W + 5, -H);
 
-            const bossShape = new THREE.Shape();
-            bossShape.absarc(0, H + 2, (holeDia / 2) + 3, 0, Math.PI * 2, false);
-            const holeP = new THREE.Path(); holeP.absarc(0, H + 2, holeDia / 2, 0, Math.PI * 2, true);
-            bossShape.holes.push(holeP);
-
-            const pGeo = new THREE.ExtrudeGeometry([rectShape, bossShape], extrudeSettings);
+            const pGeo = new THREE.ExtrudeGeometry(rectShape, extrudeSettings);
             const pMesh = new THREE.Mesh(pGeo, matBase);
             keychainGroup.add(pMesh);
+
+            const box = new THREE.Box3().setFromObject(pMesh);
+            const maxY = box.max.y;
+
+            const bossRadius = (holeDia / 2) + 3;
+            const bossShape = new THREE.Shape();
+            bossShape.absarc(0, 0, bossRadius, 0, Math.PI * 2, false);
+            const holeP = new THREE.Path(); holeP.absarc(0, 0, holeDia / 2, 0, Math.PI * 2, true);
+            bossShape.holes.push(holeP);
+
+            const bossGeo = new THREE.ExtrudeGeometry(bossShape, extrudeSettings);
+            const bossMesh = new THREE.Mesh(bossGeo, matBase);
+            bossMesh.position.set(0, maxY + bossRadius - 1.5, 0);
+            keychainGroup.add(bossMesh);
 
             const logoGroup = new THREE.Group();
             customSvgShapes.forEach(path => {
@@ -315,11 +359,15 @@
                     logoGroup.add(new THREE.Mesh(geom, matLogo));
                 });
             });
-            const box = new THREE.Box3().setFromObject(logoGroup);
-            const size = new THREE.Vector3(); box.getSize(size);
+            
+            const lBox = new THREE.Box3().setFromObject(logoGroup);
+            const size = new THREE.Vector3(); lBox.getSize(size);
+            const center = new THREE.Vector3(); lBox.getCenter(center);
+            
+            logoGroup.children.forEach(m => { m.geometry.translate(-center.x, -center.y, 0); });
             const scale = Math.min((width - 10) / (size.x || 1), (height - 10) / (size.y || 1));
             logoGroup.scale.set(scale, -scale, 1);
-            logoGroup.position.set(- (size.x * scale) / 2, (size.y * scale) / 2, thickness);
+            logoGroup.position.set(0, 0, thickness);
             keychainGroup.add(logoGroup);
         }
 
