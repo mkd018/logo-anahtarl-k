@@ -6,6 +6,7 @@
     <title>3D Logo Anahtarlık Fabrikası</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
@@ -53,19 +54,19 @@
 
     <div class="form-group">
         <label for="widthInput">Genişlik (X - mm):</label>
-        <input type="number" id="widthInput" value="70" min="40" max="150" oninput="updateKeychain()">
+        <input type="number" id="widthInput" value="70" min="40" max="150" oninput="safeUpdate()">
     </div>
     <div class="form-group">
         <label for="heightInput">Yükseklik (Y - mm):</label>
-        <input type="number" id="heightInput" value="50" min="30" max="100" oninput="updateKeychain()">
+        <input type="number" id="heightInput" value="50" min="30" max="100" oninput="safeUpdate()">
     </div>
     <div class="form-group">
         <label for="thicknessInput">Kalınlık (Z - mm):</label>
-        <input type="number" id="thicknessInput" value="3.5" min="1" max="10" step="0.5" oninput="updateKeychain()">
+        <input type="number" id="thicknessInput" value="3.5" min="1" max="10" step="0.5" oninput="safeUpdate()">
     </div>
     <div class="form-group">
         <label for="holeInput">Delik Çapı (mm):</label>
-        <input type="number" id="holeInput" value="4.5" min="2" max="10" step="0.5" oninput="updateKeychain()">
+        <input type="number" id="holeInput" value="4.5" min="2" max="10" step="0.5" oninput="safeUpdate()">
     </div>
 
     <div id="canvas-container"></div>
@@ -75,7 +76,7 @@
 
 <script>
     let scene, camera, renderer, controls, keychainGroup;
-    let activeMode = 'preset'; // 'preset' veya 'custom'
+    let activeMode = 'preset'; 
     let customSvgShapes = null;
 
     function init3D() {
@@ -101,18 +102,29 @@
         dirLight.position.set(10, -20, 50);
         scene.add(dirLight);
 
-        updateKeychain();
+        safeUpdate();
         animate();
     }
 
     function onLogoChange() {
         activeMode = 'preset';
-        document.getElementById('svgUpload').value = ""; // Dosya seçimi sıfırlanır
+        document.getElementById('svgUpload').value = ""; 
         document.getElementById('status').innerText = "Hazır logo yüklendi!";
-        updateKeychain();
+        document.getElementById('status').style.color = "#28a745";
+        safeUpdate();
     }
 
-    // Matematiksel ve Detaylı 3D Logo Geometrileri
+    function safeUpdate() {
+        try {
+            updateKeychain();
+        } catch (e) {
+            console.error("Çizim Hatası: ", e);
+            document.getElementById('status').innerText = "Çizim hatası, parametreleri kontrol edin.";
+            document.getElementById('status').style.color = "red";
+        }
+    }
+
+    // Saf matematiksel ve hatasız logo oluşturucu (Hata vermemesi için noktalarla çizim)
     function createLogoGeometry(logoType) {
         const group = new THREE.Group();
         const mat = new THREE.MeshStandardMaterial({ color: 0x00a8cc, roughness: 0.2 });
@@ -132,11 +144,10 @@
             addMesh(path1);
 
             const bar = new THREE.Shape();
-            bar.absrect(-25, 14, 50, 4);
+            bar.moveTo(-25, 14); bar.lineTo(25, 14); bar.lineTo(25, 18); bar.lineTo(-25, 18); bar.lineTo(-25, 14);
             addMesh(bar);
         } 
         else if (logoType === 'bmw') {
-            // Dış Çember
             const ring = new THREE.Shape();
             ring.absarc(0, 0, 22, 0, Math.PI * 2, false);
             const hole = new THREE.Path();
@@ -144,16 +155,15 @@
             ring.holes.push(hole);
             addMesh(ring);
 
-            // İç Haç Çizgileri
             const lineH = new THREE.Shape();
-            lineH.absrect(-18, -1.5, 36, 3);
+            lineH.moveTo(-18, -1.5); lineH.lineTo(18, -1.5); lineH.lineTo(18, 1.5); lineH.lineTo(-18, 1.5); lineH.lineTo(-18, -1.5);
             addMesh(lineH);
+
             const lineV = new THREE.Shape();
-            lineV.absrect(-1.5, -18, 3, 36);
+            lineV.moveTo(-1.5, -18); lineV.lineTo(1.5, -18); lineV.lineTo(1.5, 18); lineV.lineTo(-1.5, 18); lineV.lineTo(-1.5, -18);
             addMesh(lineV);
         } 
         else if (logoType === 'ford') {
-            // Oval Çerçeve
             const oval = new THREE.Shape();
             oval.absellipse(0, 0, 28, 14, 0, Math.PI * 2, false, 0);
             const ovalHole = new THREE.Path();
@@ -161,24 +171,21 @@
             oval.holes.push(ovalHole);
             addMesh(oval);
 
-            // İç Yazı Plakası
             const innerBar = new THREE.Shape();
-            innerBar.absrect(-16, -3, 32, 6);
+            innerBar.moveTo(-16, -3); innerBar.lineTo(16, -3); innerBar.lineTo(16, 3); innerBar.lineTo(-16, 3); innerBar.lineTo(-16, -3);
             addMesh(innerBar);
         } 
         else if (logoType === 'audi') {
-            // 4 Halkalı Yapı
             for (let i = -1.5; i <= 1.5; i += 1) {
                 const ring = new THREE.Shape();
-                ring.absarc(i * 10, 0, 9, 0, Math.PI * 2, false);
+                ring.absarc(i * 11, 0, 9, 0, Math.PI * 2, false);
                 const h = new THREE.Path();
-                h.absarc(i * 10, 0, 6.5, 0, Math.PI * 2, true);
+                h.absarc(i * 11, 0, 6.5, 0, Math.PI * 2, true);
                 ring.holes.push(h);
                 addMesh(ring);
             }
         } 
         else if (logoType === 'mercedes') {
-            // Dış Çember
             const ring = new THREE.Shape();
             ring.absarc(0, 0, 21, 0, Math.PI * 2, false);
             const hole = new THREE.Path();
@@ -186,17 +193,14 @@
             ring.holes.push(hole);
             addMesh(ring);
 
-            // Üç Kollu Yıldız Kollar
             for (let i = 0; i < 3; i++) {
                 const angle = i * ((2 * Math.PI) / 3);
-                const blade = new THREE.Shape();
-                blade.moveTo(0, 0);
-                blade.lineTo(Math.sin(angle) * 17, Math.cos(angle) * 17);
-                // Kalınlık kazandırmak için
                 const box = new THREE.Shape();
-                box.absrect(-1.5, 0, 3, 17);
-                box.rotateZ(-angle);
-                addMesh(box);
+                box.moveTo(-1.5, 0); box.lineTo(1.5, 0); box.lineTo(1.5, 18); box.lineTo(-1.5, 18); box.lineTo(-1.5, 0);
+                
+                const geom = new THREE.ExtrudeGeometry(box, { depth: 1.2, bevelEnabled: false });
+                geom.rotateZ(-angle); // Şekli değil, geometriyi döndürürüz (hatasızdır)
+                group.add(new THREE.Mesh(geom, mat));
             }
         }
         return group;
@@ -213,9 +217,11 @@
                 customSvgShapes = svgData.paths;
                 activeMode = 'custom';
                 document.getElementById('status').innerText = "Özel SVG başarıyla yüklendi!";
-                updateKeychain();
+                document.getElementById('status').style.color = "#007bff";
+                safeUpdate();
             } catch (err) {
                 document.getElementById('status').innerText = "SVG okuma hatası!";
+                document.getElementById('status').style.color = "red";
             }
         };
         reader.readAsText(file);
@@ -226,7 +232,7 @@
         if (keychainGroup) scene.remove(keychainGroup);
 
         keychainGroup = new THREE.Group();
-        const plateMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 });
+        const plateMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.3 });
 
         const width = parseFloat(document.getElementById('widthInput').value) || 70;
         const height = parseFloat(document.getElementById('heightInput').value) || 50;
@@ -234,7 +240,7 @@
         const holeDia = parseFloat(document.getElementById('holeInput').value) || 4.5;
         const logoType = document.getElementById('logoSelect').value;
 
-        // 1. Ana Plaka ve Üst Halka Delikli Kulakçık
+        // 1. Ana Plaka
         const rectShape = new THREE.Shape();
         const hw = width / 2;
         const hh = height / 2;
@@ -268,7 +274,7 @@
         plateMesh.position.set(0, 0, thickness / 2);
         keychainGroup.add(plateMesh);
 
-        // 2. Logo Grubu (Hazır logo veya Yüklenen özel SVG)
+        // 2. Logo Grubu
         let logoGroup;
         if (activeMode === 'custom' && customSvgShapes) {
             logoGroup = new THREE.Group();
@@ -313,7 +319,7 @@
         const blob = new Blob([result], { type: 'application/octet-stream' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `${document.getElementById('logoSelect').value}_anahtarlik.stl`;
+        link.download = `${activeMode === 'preset' ? document.getElementById('logoSelect').value : 'ozel_logo'}_anahtarlik.stl`;
         link.click();
     }
 
