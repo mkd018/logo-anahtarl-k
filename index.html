@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Orijinal Logolar - Anahtarlık Fabrikası</title>
+    <title>3D Tüm Logolar - Anahtarlık Fabrikası</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
@@ -29,7 +31,7 @@
 <body>
 
 <div class="container">
-    <h2>3D Orijinal Logolar - Anahtarlık Fabrikası</h2>
+    <h2>3D Tüm Logolar - Anahtarlık Fabrikası</h2>
     
     <div class="form-group full-width" style="flex-direction: column; align-items: flex-start;">
         <label for="logoSelect">Tüm Markalar (20 Orijinal Logo):</label>
@@ -55,8 +57,8 @@
 <script>
     let scene, camera, renderer, controls, keychainGroup;
     let currentSvgPaths = null; 
+    let activeMode = 'preset';
 
-    // Orijinal CDN Vektörleri ve Özel Taban Plakası Formları
     const BRANDS = {
         tesla: { name: "Tesla", base: 'rect', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/tesla.svg" },
         bmw: { name: "BMW", base: 'circle', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/bmw.svg" },
@@ -115,6 +117,7 @@
     }
 
     function loadPresetLogo() {
+        activeMode = 'preset';
         document.getElementById('svgUpload').value = ""; 
         const brand = BRANDS[document.getElementById('logoSelect').value];
         document.getElementById('status').innerText = "Orijinal logo CDN'den indiriliyor...";
@@ -139,8 +142,30 @@
         reader.onload = function(e) {
             try {
                 const loader = new THREE.SVGLoader();
-                currentSvgPaths = loader.parse(e.target.result).paths;
-                document.getElementById('status').innerText = "Özel SVG başarıyla yüklendi!";
+                const svgData = loader.parse(e.target.result);
+                
+                // AKILLI SVG TEMİZLEYİCİ: Görünmez veya tamamen beyaz arka planları otomatik çöpe at
+                let validPaths = svgData.paths.filter(p => {
+                    const style = p.userData.style;
+                    if (!style) return true;
+                    // Saydam ve boş dolguları ele
+                    if (style.fill === 'none' || style.fillOpacity === 0) return false;
+                    return true;
+                });
+                
+                let noWhitePaths = validPaths.filter(p => {
+                    let f = p.userData.style.fill;
+                    if (!f) return true;
+                    f = f.toLowerCase().replace(/\s/g, '');
+                    // Beyaz arka plan tuvalini ele
+                    return f !== '#ffffff' && f !== 'white' && f !== 'rgb(255,255,255)';
+                });
+                
+                if (noWhitePaths.length > 0) validPaths = noWhitePaths;
+                
+                currentSvgPaths = validPaths;
+                activeMode = 'custom';
+                document.getElementById('status').innerText = "Özel SVG başarıyla yüklendi ve temizlendi!";
                 document.getElementById('status').style.color = "#007bff";
                 build3D();
             } catch (err) {
@@ -151,7 +176,6 @@
         reader.readAsText(file);
     }
 
-    // Taban Plakası Şekil Üretici (Yuvarlak, Oval, Kalkan, Elmas, Dikdörtgen)
     function getBaseShape(type, w, h) {
         const s = new THREE.Shape();
         const hw = w / 2, hh = h / 2;
@@ -165,7 +189,7 @@
             s.moveTo(-hw, hh); s.lineTo(hw, hh);
             s.quadraticCurveTo(hw, -hh * 0.2, 0, -hh);
             s.quadraticCurveTo(-hw, -hh * 0.2, -hw, hh);
-        } else { // Rect (Yuvarlatılmış Dikdörtgen)
+        } else { 
             const r = 5;
             s.moveTo(-hw + r, -hh); s.lineTo(hw - r, -hh); s.quadraticCurveTo(hw, -hh, hw, -hh + r);
             s.lineTo(hw, hh - r); s.quadraticCurveTo(hw, hh, hw - r, hh);
@@ -176,7 +200,11 @@
     }
 
     function build3D() {
-        if (!scene || !currentSvgPaths) return;
+        if (!scene || !currentSvgPaths || currentSvgPaths.length === 0) {
+            document.getElementById('status').innerText = "Hata: Çizilebilir logo bulunamadı!";
+            document.getElementById('status').style.color = "red";
+            return;
+        }
         if (keychainGroup) scene.remove(keychainGroup);
 
         keychainGroup = new THREE.Group();
@@ -187,10 +215,9 @@
         const height = parseFloat(document.getElementById('heightInput').value) || 50;
         const thickness = parseFloat(document.getElementById('thicknessInput').value) || 3.5;
         const holeDia = parseFloat(document.getElementById('holeInput').value) || 4.5;
-        const extrudeSettings = { depth: thickness, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.1, bevelThickness: 0.1 };
+        const extrudeSettings = { depth: thickness, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.15, bevelThickness: 0.15 };
         
-        const isCustom = document.getElementById('svgUpload').files.length > 0;
-        const baseType = isCustom ? 'rect' : BRANDS[document.getElementById('logoSelect').value].base;
+        const baseType = (activeMode === 'custom') ? 'rect' : BRANDS[document.getElementById('logoSelect').value].base;
 
         // 1. Taban Plakası
         const baseShape = getBaseShape(baseType, width, height);
@@ -199,7 +226,7 @@
         const baseMesh = new THREE.Mesh(baseGeo, matBase);
         keychainGroup.add(baseMesh);
 
-        // 2. Dinamik Halka Bağlantısı (Plakanın üst sınırını otomatik bularak asılı kalmayı önler)
+        // 2. Dinamik Halka Bağlantısı
         const boxBase = new THREE.Box3().setFromObject(baseMesh);
         const maxY = boxBase.max.y;
         
@@ -212,10 +239,10 @@
 
         const bossGeo = new THREE.ExtrudeGeometry(bossShape, extrudeSettings);
         const bossMesh = new THREE.Mesh(bossGeo, matBase);
-        bossMesh.position.set(0, maxY + bossRadius - 1.5, 0); // Üst kenara tam kaynatma
+        bossMesh.position.set(0, maxY + bossRadius - 1.5, 0); 
         keychainGroup.add(bossMesh);
 
-        // 3. CDN'den İndirilen Orijinal Logoyu Ekleme ve Ortalama
+        // 3. Filtrelenmiş / Orijinal Logoyu Ekleme
         const logoGroup = new THREE.Group();
         currentSvgPaths.forEach(path => {
             path.toShapes(true).forEach(shape => {
@@ -224,16 +251,16 @@
             });
         });
         
-        // Logoyu merkeze çekme ve plaka boyutuna göre ölçeklendirme
         const lBox = new THREE.Box3().setFromObject(logoGroup);
         const size = new THREE.Vector3(); lBox.getSize(size);
         const center = new THREE.Vector3(); lBox.getCenter(center);
         
         logoGroup.children.forEach(m => { m.geometry.translate(-center.x, -center.y, 0); });
         
+        // Asıl logoyu tam orantılı sığdırma
         const scale = Math.min((width - 12) / (size.x || 1), (height - 12) / (size.y || 1));
-        logoGroup.scale.set(scale, -scale, 1); // SVG Y ekseni ters çevrilir
-        logoGroup.position.set(0, 0, thickness / 2); // Plaka yüzeyine oturtulur
+        logoGroup.scale.set(scale, -scale, 1); 
+        logoGroup.position.set(0, 0, thickness); 
 
         keychainGroup.add(logoGroup);
         scene.add(keychainGroup);
@@ -252,7 +279,7 @@
         const blob = new Blob([result], { type: 'application/octet-stream' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `3d_orijinal_logo_anahtarlik.stl`;
+        link.download = `${activeMode === 'preset' ? document.getElementById('logoSelect').value : 'ozel_logo'}_anahtarlik.stl`;
         link.click();
     }
 
