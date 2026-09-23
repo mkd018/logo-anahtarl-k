@@ -262,7 +262,7 @@
             bases.forEach(shape => {
                 const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
                 const mesh = new THREE.Mesh(geo, matBase);
-                mesh.position.z = thickness / 2;
+                // NOT: Z ekseninde kaydırma yapılmıyor (0'dan thickness'a kadar uzar)
                 keychainGroup.add(mesh);
             });
 
@@ -275,19 +275,17 @@
 
             const bossGeo = new THREE.ExtrudeGeometry(bossShape, extrudeSettings);
             const bossMesh = new THREE.Mesh(bossGeo, matBase);
-            bossMesh.position.z = thickness / 2;
             keychainGroup.add(bossMesh);
 
             // 3. Renkli Logo Kabartması
             let logos = b.logo();
             logos.forEach((shape, idx) => {
                 const geo = new THREE.ExtrudeGeometry(shape, logoExtrude);
-                // BMW'nin özel mavi kadranlarını tespit et (array'in son 2 elemanı)
                 let useMat = matLogo;
                 if (b.name === "BMW" && idx >= logos.length - 2) useMat = matBMWBlue;
                 
                 const mesh = new THREE.Mesh(geo, useMat);
-                mesh.position.z = thickness; // Plakanın üzerine oturt
+                mesh.position.z = thickness; // Plakanın Z yüksekliğinin tam bittiği yerden başlar
                 keychainGroup.add(mesh);
             });
         } 
@@ -308,7 +306,6 @@
 
             const pGeo = new THREE.ExtrudeGeometry([rectShape, bossShape], extrudeSettings);
             const pMesh = new THREE.Mesh(pGeo, matBase);
-            pMesh.position.z = thickness / 2;
             keychainGroup.add(pMesh);
 
             const logoGroup = new THREE.Group();
