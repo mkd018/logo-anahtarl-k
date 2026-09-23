@@ -7,8 +7,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
@@ -59,27 +57,30 @@
     let currentSvgPaths = null; 
     let activeMode = 'preset';
 
+    // Orijinal Marka Renkleri
+    const C_BLK = 0x222222, C_WHT = 0xffffff, C_RED = 0xcc1111, C_BLU = 0x0044cc;
+
     const BRANDS = {
-        tesla: { name: "Tesla", base: 'rect', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/tesla.svg" },
-        bmw: { name: "BMW", base: 'circle', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/bmw.svg" },
-        ford: { name: "Ford", base: 'oval', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/ford.svg" },
-        audi: { name: "Audi", base: 'rect', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/audi.svg" },
-        mercedes: { name: "Mercedes", base: 'circle', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/mercedes.svg" },
-        opel: { name: "Opel", base: 'circle', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/opel.svg" },
-        renault: { name: "Renault", base: 'diamond', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/renault.svg" },
-        fiat: { name: "Fiat", base: 'circle', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/fiat.svg" },
-        honda: { name: "Honda", base: 'rect', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/honda.svg" },
-        hyundai: { name: "Hyundai", base: 'oval', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/hyundai.svg" },
-        vw: { name: "VW", base: 'circle', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/volkswagen.svg" },
-        citroen: { name: "Citroen", base: 'circle', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/citroen.svg" },
-        suzuki: { name: "Suzuki", base: 'diamond', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/suzuki.svg" },
-        peugeot: { name: "Peugeot", base: 'shield', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/peugeot.svg" },
-        toyota: { name: "Toyota", base: 'oval', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/toyota.svg" },
-        skoda: { name: "Skoda", base: 'circle', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/skoda.svg" },
-        nissan: { name: "Nissan", base: 'circle', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/nissan.svg" },
-        mitsubishi: { name: "Mitsubishi", base: 'rect', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/mitsubishi.svg" },
-        mini: { name: "Mini", base: 'circle', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/mini.svg" },
-        volvo: { name: "Volvo", base: 'circle', url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/volvo.svg" }
+        tesla: { name: "Tesla", base: 'rect', cb: C_WHT, cl: C_RED, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/tesla.svg" },
+        bmw: { name: "BMW", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/bmw.svg" },
+        ford: { name: "Ford", base: 'oval', cb: C_BLU, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/ford.svg" },
+        audi: { name: "Audi", base: 'rect', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/audi.svg" },
+        mercedes: { name: "Mercedes", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/mercedes.svg" },
+        opel: { name: "Opel", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/opel.svg" },
+        renault: { name: "Renault", base: 'diamond', cb: C_WHT, cl: C_BLK, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/renault.svg" },
+        fiat: { name: "Fiat", base: 'circle', cb: C_RED, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/fiat.svg" },
+        honda: { name: "Honda", base: 'rect', cb: C_RED, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/honda.svg" },
+        hyundai: { name: "Hyundai", base: 'oval', cb: C_BLU, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/hyundai.svg" },
+        vw: { name: "VW", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/volkswagen.svg" },
+        citroen: { name: "Citroen", base: 'rect', cb: C_WHT, cl: C_BLK, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/citroen.svg" },
+        suzuki: { name: "Suzuki", base: 'rect', cb: C_WHT, cl: C_RED, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/suzuki.svg" },
+        peugeot: { name: "Peugeot", base: 'shield', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/peugeot.svg" },
+        toyota: { name: "Toyota", base: 'oval', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/toyota.svg" },
+        skoda: { name: "Skoda", base: 'circle', cb: C_WHT, cl: C_BLK, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/skoda.svg" },
+        nissan: { name: "Nissan", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/nissan.svg" },
+        mitsubishi: { name: "Mitsubishi", base: 'rect', cb: C_WHT, cl: C_RED, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/mitsubishi.svg" },
+        mini: { name: "Mini", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/mini.svg" },
+        volvo: { name: "Volvo", base: 'circle', cb: C_BLK, cl: C_WHT, url: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/volvo.svg" }
     };
 
     function init3D() {
@@ -126,7 +127,7 @@
         const loader = new THREE.SVGLoader();
         loader.load(brand.url, function (svgData) {
             currentSvgPaths = svgData.paths;
-            document.getElementById('status').innerText = "Orijinal Logo Hazır!";
+            document.getElementById('status').innerText = "Orijinal Renkli Logo Hazır!";
             document.getElementById('status').style.color = "#28a745";
             build3D();
         }, undefined, function (error) {
@@ -144,28 +145,21 @@
                 const loader = new THREE.SVGLoader();
                 const svgData = loader.parse(e.target.result);
                 
-                // AKILLI SVG TEMİZLEYİCİ: Görünmez veya tamamen beyaz arka planları otomatik çöpe at
+                // SVG içindeki görünmez katmanları ve beyaz arka planları eler
                 let validPaths = svgData.paths.filter(p => {
                     const style = p.userData.style;
-                    if (!style) return true;
-                    // Saydam ve boş dolguları ele
-                    if (style.fill === 'none' || style.fillOpacity === 0) return false;
+                    if (style && (style.fill === 'none' || style.fillOpacity === 0)) return false;
+                    let f = style ? style.fill : null;
+                    if (f) {
+                        f = f.toLowerCase().replace(/\s/g, '');
+                        if (f === '#ffffff' || f === 'white' || f === 'rgb(255,255,255)') return false;
+                    }
                     return true;
                 });
                 
-                let noWhitePaths = validPaths.filter(p => {
-                    let f = p.userData.style.fill;
-                    if (!f) return true;
-                    f = f.toLowerCase().replace(/\s/g, '');
-                    // Beyaz arka plan tuvalini ele
-                    return f !== '#ffffff' && f !== 'white' && f !== 'rgb(255,255,255)';
-                });
-                
-                if (noWhitePaths.length > 0) validPaths = noWhitePaths;
-                
-                currentSvgPaths = validPaths;
+                currentSvgPaths = validPaths.length > 0 ? validPaths : svgData.paths;
                 activeMode = 'custom';
-                document.getElementById('status').innerText = "Özel SVG başarıyla yüklendi ve temizlendi!";
+                document.getElementById('status').innerText = "Özel SVG başarıyla yüklendi ve işlendi!";
                 document.getElementById('status').style.color = "#007bff";
                 build3D();
             } catch (err) {
@@ -200,16 +194,24 @@
     }
 
     function build3D() {
-        if (!scene || !currentSvgPaths || currentSvgPaths.length === 0) {
-            document.getElementById('status').innerText = "Hata: Çizilebilir logo bulunamadı!";
-            document.getElementById('status').style.color = "red";
-            return;
-        }
+        if (!scene || !currentSvgPaths || currentSvgPaths.length === 0) return;
         if (keychainGroup) scene.remove(keychainGroup);
 
         keychainGroup = new THREE.Group();
-        const matBase = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.3 });
-        const matLogo = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+        
+        let cb = 0x333333; // Varsayılan zemin
+        let cl = 0xffffff; // Varsayılan logo
+        let baseType = 'rect';
+
+        if (activeMode === 'preset') {
+            const brandInfo = BRANDS[document.getElementById('logoSelect').value];
+            cb = brandInfo.cb;
+            cl = brandInfo.cl;
+            baseType = brandInfo.base;
+        }
+
+        const matBase = new THREE.MeshStandardMaterial({ color: cb, roughness: 0.3 });
+        const matLogo = new THREE.MeshStandardMaterial({ color: cl, roughness: 0.2 });
 
         const width = parseFloat(document.getElementById('widthInput').value) || 70;
         const height = parseFloat(document.getElementById('heightInput').value) || 50;
@@ -217,16 +219,14 @@
         const holeDia = parseFloat(document.getElementById('holeInput').value) || 4.5;
         const extrudeSettings = { depth: thickness, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.15, bevelThickness: 0.15 };
         
-        const baseType = (activeMode === 'custom') ? 'rect' : BRANDS[document.getElementById('logoSelect').value].base;
-
-        // 1. Taban Plakası
+        // 1. Taban Plakası Oluşturma
         const baseShape = getBaseShape(baseType, width, height);
         const baseGeo = new THREE.ExtrudeGeometry(baseShape, extrudeSettings);
         baseGeo.center();
         const baseMesh = new THREE.Mesh(baseGeo, matBase);
         keychainGroup.add(baseMesh);
 
-        // 2. Dinamik Halka Bağlantısı
+        // 2. Tepe Halka Bağlantısı
         const boxBase = new THREE.Box3().setFromObject(baseMesh);
         const maxY = boxBase.max.y;
         
@@ -242,22 +242,24 @@
         bossMesh.position.set(0, maxY + bossRadius - 1.5, 0); 
         keychainGroup.add(bossMesh);
 
-        // 3. Filtrelenmiş / Orijinal Logoyu Ekleme
+        // 3. Logoları Kusursuz İşleme (Hatalı bloklaşmayı önleyen kritik bölüm)
         const logoGroup = new THREE.Group();
         currentSvgPaths.forEach(path => {
-            path.toShapes(true).forEach(shape => {
+            // SVGLoader.createShapes kullanılarak "boşlukların/deliklerin" doğru algılanması sağlandı
+            const shapes = THREE.SVGLoader.createShapes(path);
+            shapes.forEach(shape => {
                 const geom = new THREE.ExtrudeGeometry(shape, { depth: 1.2, bevelEnabled: false });
                 logoGroup.add(new THREE.Mesh(geom, matLogo));
             });
         });
         
+        // Logoyu Ortalama ve Sığdırma
         const lBox = new THREE.Box3().setFromObject(logoGroup);
         const size = new THREE.Vector3(); lBox.getSize(size);
         const center = new THREE.Vector3(); lBox.getCenter(center);
         
         logoGroup.children.forEach(m => { m.geometry.translate(-center.x, -center.y, 0); });
         
-        // Asıl logoyu tam orantılı sığdırma
         const scale = Math.min((width - 12) / (size.x || 1), (height - 12) / (size.y || 1));
         logoGroup.scale.set(scale, -scale, 1); 
         logoGroup.position.set(0, 0, thickness); 
