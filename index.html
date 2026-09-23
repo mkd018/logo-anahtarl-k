@@ -7,6 +7,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
@@ -23,7 +25,8 @@
         button:hover { background: #218838; }
         hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
         .status { font-size: 11px; color: #007bff; text-align: center; font-weight: bold; margin-bottom: 10px; }
-        .file-info { font-size: 12px; color: #666; margin-top: 4px; }
+        .toggle-group { display: flex; align-items: center; gap: 8px; color: #d9534f; font-weight: bold; font-size: 13px; margin-bottom: 10px; }
+        .toggle-group input { width: 18px; height: 18px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -39,6 +42,11 @@
     <div class="form-group full-width" style="flex-direction: column; align-items: flex-start; margin-top: 10px;">
         <label for="svgUpload">Veya Özel SVG Logonuzu Yükleyin:</label>
         <input type="file" id="svgUpload" accept=".svg" onchange="handleSvgUpload(event)" style="width: 100%;">
+    </div>
+
+    <div class="toggle-group" id="windingContainer" style="display: none;">
+        <input type="checkbox" id="windingToggle" onchange="build3D()">
+        <label for="windingToggle" style="color: inherit;">SVG Delik Onarımı (Harfler kapalıysa işaretleyin)</label>
     </div>
 
     <div id="status" class="status">Sistem aktif ve hazır!</div>
@@ -57,7 +65,6 @@
     let currentSvgPaths = null; 
     let activeMode = 'preset';
 
-    // Orijinal Marka Renkleri
     const C_BLK = 0x222222, C_WHT = 0xffffff, C_RED = 0xcc1111, C_BLU = 0x0044cc;
 
     const BRANDS = {
@@ -120,6 +127,8 @@
     function loadPresetLogo() {
         activeMode = 'preset';
         document.getElementById('svgUpload').value = ""; 
+        document.getElementById('windingContainer').style.display = 'none';
+        
         const brand = BRANDS[document.getElementById('logoSelect').value];
         document.getElementById('status').innerText = "Orijinal logo CDN'den indiriliyor...";
         document.getElementById('status').style.color = "#ffc107";
@@ -131,7 +140,7 @@
             document.getElementById('status').style.color = "#28a745";
             build3D();
         }, undefined, function (error) {
-            document.getElementById('status').innerText = "Bağlantı Hatası: Logo indirilemedi!";
+            document.getElementById('status').innerText = "Bağlantı Hatası!";
             document.getElementById('status').style.color = "red";
         });
     }
@@ -145,7 +154,6 @@
                 const loader = new THREE.SVGLoader();
                 const svgData = loader.parse(e.target.result);
                 
-                // SVG içindeki görünmez katmanları ve beyaz arka planları eler
                 let validPaths = svgData.paths.filter(p => {
                     const style = p.userData.style;
                     if (style && (style.fill === 'none' || style.fillOpacity === 0)) return false;
@@ -159,7 +167,8 @@
                 
                 currentSvgPaths = validPaths.length > 0 ? validPaths : svgData.paths;
                 activeMode = 'custom';
-                document.getElementById('status').innerText = "Özel SVG başarıyla yüklendi ve işlendi!";
+                document.getElementById('windingContainer').style.display = 'flex';
+                document.getElementById('status').innerText = "Özel SVG başarıyla yüklendi!";
                 document.getElementById('status').style.color = "#007bff";
                 build3D();
             } catch (err) {
@@ -199,8 +208,8 @@
 
         keychainGroup = new THREE.Group();
         
-        let cb = 0x333333; // Varsayılan zemin
-        let cl = 0xffffff; // Varsayılan logo
+        let cb = 0x333333; 
+        let cl = 0xffffff; 
         let baseType = 'rect';
 
         if (activeMode === 'preset') {
@@ -219,14 +228,12 @@
         const holeDia = parseFloat(document.getElementById('holeInput').value) || 4.5;
         const extrudeSettings = { depth: thickness, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.15, bevelThickness: 0.15 };
         
-        // 1. Taban Plakası Oluşturma
         const baseShape = getBaseShape(baseType, width, height);
         const baseGeo = new THREE.ExtrudeGeometry(baseShape, extrudeSettings);
         baseGeo.center();
         const baseMesh = new THREE.Mesh(baseGeo, matBase);
         keychainGroup.add(baseMesh);
 
-        // 2. Tepe Halka Bağlantısı
         const boxBase = new THREE.Box3().setFromObject(baseMesh);
         const maxY = boxBase.max.y;
         
@@ -242,18 +249,19 @@
         bossMesh.position.set(0, maxY + bossRadius - 1.5, 0); 
         keychainGroup.add(bossMesh);
 
-        // 3. Logoları Kusursuz İşleme (Hatalı bloklaşmayı önleyen kritik bölüm)
         const logoGroup = new THREE.Group();
+        const fixWinding = document.getElementById('windingToggle').checked;
+        const isCCW = !fixWinding; // SVG Çizim Yönü Dinamik Kuralı
+
         currentSvgPaths.forEach(path => {
-            // SVGLoader.createShapes kullanılarak "boşlukların/deliklerin" doğru algılanması sağlandı
-            const shapes = THREE.SVGLoader.createShapes(path);
+            // Şalter açıksa yönleri tersine çevirerek hatalı blokları delik olarak algılatır
+            const shapes = path.toShapes(isCCW); 
             shapes.forEach(shape => {
                 const geom = new THREE.ExtrudeGeometry(shape, { depth: 1.2, bevelEnabled: false });
                 logoGroup.add(new THREE.Mesh(geom, matLogo));
             });
         });
         
-        // Logoyu Ortalama ve Sığdırma
         const lBox = new THREE.Box3().setFromObject(logoGroup);
         const size = new THREE.Vector3(); lBox.getSize(size);
         const center = new THREE.Vector3(); lBox.getCenter(center);
