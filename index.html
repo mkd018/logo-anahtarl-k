@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Logo Anahtarlık Fabrikası</title>
+    <title>3D Tüm Logolar - Anahtarlık Fabrikası</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
@@ -29,23 +29,18 @@
 <body>
 
 <div class="container">
-    <h2>3D Logo Anahtarlık Fabrikası</h2>
+    <h2>3D Tüm Logolar - Anahtarlık Fabrikası</h2>
     
     <div class="form-group full-width" style="flex-direction: column; align-items: flex-start;">
-        <label for="logoSelect">Hazır Logo Seç:</label>
-        <select id="logoSelect" onchange="onLogoChange()" style="width: 100%; text-align: left;">
-            <option value="tesla">Tesla Logo</option>
-            <option value="bmw">BMW Logo</option>
-            <option value="ford">Ford Logo</option>
-            <option value="audi">Audi Logo</option>
-            <option value="mercedes">Mercedes Logo</option>
+        <label for="logoSelect">Tüm Markalar (20 Hazır Logo):</label>
+        <select id="logoSelect" onchange="onLogoChange()" style="width: 100%; text-align: left; font-weight: bold;">
+            <!-- Seçenekler JS ile otomatik eklenecek -->
         </select>
     </div>
 
     <div class="form-group full-width" style="flex-direction: column; align-items: flex-start; margin-top: 10px;">
-        <label for="svgUpload">Veya Kendi SVG Logonuzu Yükleyin:</label>
+        <label for="svgUpload">Veya Özel SVG Logonuzu Yükleyin:</label>
         <input type="file" id="svgUpload" accept=".svg" onchange="handleSvgUpload(event)" style="width: 100%;">
-        <div class="file-info">(.svg vektör dosyanızı seçin)</div>
     </div>
 
     <div id="status" class="status">Sistem aktif ve hazır!</div>
@@ -54,11 +49,11 @@
 
     <div class="form-group">
         <label for="widthInput">Genişlik (X - mm):</label>
-        <input type="number" id="widthInput" value="70" min="40" max="150" oninput="safeUpdate()">
+        <input type="number" id="widthInput" value="60" min="30" max="150" oninput="safeUpdate()">
     </div>
     <div class="form-group">
         <label for="heightInput">Yükseklik (Y - mm):</label>
-        <input type="number" id="heightInput" value="50" min="30" max="100" oninput="safeUpdate()">
+        <input type="number" id="heightInput" value="60" min="30" max="100" oninput="safeUpdate()">
     </div>
     <div class="form-group">
         <label for="thicknessInput">Kalınlık (Z - mm):</label>
@@ -78,6 +73,94 @@
     let scene, camera, renderer, controls, keychainGroup;
     let activeMode = 'preset'; 
     let customSvgShapes = null;
+
+    // Kurumsal Renk Kodları
+    const C_BLK = 0x222222, C_WHT = 0xffffff, C_RED = 0xcc1111, C_BLU = 0x0044cc;
+
+    // Matematiksel Geometri Yardımcıları (Kompakt ve hatasız çizim için)
+    let W = 30, H = 30; // Varsayılan yarıçap (güncellenecek)
+    const P = (pts, isHole=false) => {
+        const s = isHole ? new THREE.Path() : new THREE.Shape();
+        s.moveTo(pts[0]*W, pts[1]*H);
+        for(let i=2; i<pts.length; i+=2) s.lineTo(pts[i]*W, pts[i+1]*H);
+        return s;
+    };
+    const C = (r) => { const s = new THREE.Shape(); s.absarc(0,0, r*W, 0, Math.PI*2); return s; };
+    const Ring = (rOut, rIn) => {
+        const s = new THREE.Shape(); s.absarc(0,0, rOut*W, 0, Math.PI*2);
+        const h = new THREE.Path(); h.absarc(0,0, rIn*W, 0, Math.PI*2, true);
+        s.holes.push(h); return s;
+    };
+    const Oval = (rx, ry) => { const s = new THREE.Shape(); s.absellipse(0,0, rx*W, ry*H, 0, Math.PI*2); return s; };
+    const ORing = (rox, roy, rix, riy) => {
+        const s = new THREE.Shape(); s.absellipse(0,0, rox*W, roy*H, 0, Math.PI*2);
+        const h = new THREE.Path(); h.absellipse(0,0, rix*W, riy*H, 0, Math.PI*2, true);
+        s.holes.push(h); return s;
+    };
+    const Rect = (x,y, w, h) => { return P([x,y, x+w,y, x+w,y+h, x,y+h]); };
+    const offsetS = (s, dx) => {
+        const out = new THREE.Shape(); out.setFromPoints(s.getPoints(32).map(p => new THREE.Vector2(p.x + dx, p.y)));
+        s.holes.forEach(h => {
+            const nH = new THREE.Path(); nH.setFromPoints(h.getPoints(32).map(p => new THREE.Vector2(p.x + dx, p.y))); out.holes.push(nH);
+        }); return out;
+    };
+
+    // Tam 20 Adet Aracın Matematiksel Geometrisi ve Renkleri
+    const BRANDS = {
+        opel: { name: "Opel", cb: C_BLK, cl: C_WHT, 
+            base: ()=>C(1), logo: ()=>[Ring(0.9, 0.75), P([-0.7,0.1, -0.1,0.1, -0.3,-0.1, 0.7,-0.1, 0.1,-0.1, 0.3,0.1])] },
+        renault: { name: "Renault", cb: C_BLK, cl: C_WHT, 
+            base: ()=>P([0,1, 0.6,0, 0,-1, -0.6,0]), logo: ()=>{
+                let sh = P([0,0.85, 0.45,0, 0,-0.85, -0.45,0]); sh.holes.push(P([0,0.55, 0.25,0, 0,-0.55, -0.25,0], true));
+                return [sh, P([0,0.25, 0.1,0, 0,-0.25, -0.1,0])]; } },
+        fiat: { name: "Fiat", cb: C_RED, cl: C_WHT, 
+            base: ()=>C(1), logo: ()=>[Ring(0.95, 0.85), Rect(-0.7,-0.2,0.2,0.4), Rect(-0.4,-0.2,0.1,0.4), Rect(0.2,-0.2,0.1,0.4), Rect(0.4,-0.2,0.3,0.1), Rect(0.5,-0.2,0.1,0.4), P([-0.2,-0.2, 0.1,-0.2, 0,-0.1, 0,0.2, -0.1,0.2])] },
+        mercedes: { name: "Mercedes", cb: C_BLK, cl: C_WHT, 
+            base: ()=>C(1), logo: ()=>[Ring(0.9, 0.8), P([0,0.8, 0.08,0.08, 0.7,-0.4, 0,-0.08, -0.7,-0.4, -0.08,0.08])] },
+        tesla: { name: "Tesla", cb: C_WHT, cl: C_RED, 
+            base: ()=>P([-0.8,0.9, 0.8,0.9, 0.8,-0.2, 0,-1, -0.8,-0.2]), logo: ()=>[P([-0.6,0.5, 0.6,0.5, 0.6,0.65, -0.6,0.65]), P([-0.5,0.3, 0.5,0.3, 0.4,0.2, 0.1,0.2, 0.1,-0.5, -0.1,-0.5, -0.1,0.2, -0.4,0.2])] },
+        honda: { name: "Honda", cb: C_RED, cl: C_WHT, 
+            base: ()=>P([-0.8,0.9, 0.8,0.9, 0.8,-0.6, 0.4,-0.9, -0.4,-0.9, -0.8,-0.6]), logo: ()=>{
+                let sh = P([-0.7,0.8, 0.7,0.8, 0.7,-0.5, 0.3,-0.8, -0.3,-0.8, -0.7,-0.5]); sh.holes.push(P([-0.6,0.7, 0.6,0.7, 0.6,-0.45, 0.25,-0.7, -0.25,-0.7, -0.6,-0.45], true));
+                return [sh, P([-0.5,0.6, -0.3,0.6, -0.3,0.1, 0.3,0.1, 0.3,0.6, 0.5,0.6, 0.4,-0.6, 0.2,-0.6, 0.2,-0.2, -0.2,-0.2, -0.2,-0.6, -0.4,-0.6])]; } },
+        hyundai: { name: "Hyundai", cb: C_BLU, cl: C_WHT, 
+            base: ()=>Oval(1, 0.7), logo: ()=>[ORing(0.9, 0.6, 0.75, 0.45), P([-0.5,-0.4, -0.2,0.4, 0,0.4, -0.3,-0.4]), P([0.3,-0.4, 0.5,0.4, 0.3,0.4, 0.1,-0.4]), P([-0.3,0.1, 0.4,0.1, 0.4,-0.1, -0.3,-0.1])] },
+        vw: { name: "VW", cb: C_BLK, cl: C_WHT, 
+            base: ()=>C(1), logo: ()=>[Ring(0.9, 0.8), P([-0.7,0.7, -0.4,-0.7, -0.1,-0.7, 0.2,0.7, 0,0.7, -0.15,-0.1, -0.3,0.7]), P([0.7,0.7, 0.4,-0.7, 0.1,-0.7, -0.2,0.7, 0,0.7, 0.15,-0.1, 0.3,0.7])] },
+        citroen: { name: "Citroen", cb: C_BLK, cl: C_WHT, 
+            base: ()=>P([-0.8,0.5, 0,1, 0.8,0.5, 0.8,-0.3, 0,0.2, -0.8,-0.3]), logo: ()=>[P([-0.6,0.5, 0,0.85, 0.6,0.5, 0.6,0.3, 0,0.65, -0.6,0.3]), P([-0.6,0, 0,0.35, 0.6,0, 0.6,-0.2, 0,0.15, -0.6,-0.2])] },
+        suzuki: { name: "Suzuki", cb: C_RED, cl: C_WHT, 
+            base: ()=>P([-0.7,0.8, 0.7,0.8, 0.7,0.1, -0.2,-0.1, 0.7,-0.3, 0.7,-0.8, -0.7,-0.8, -0.7,-0.1, 0.2,0.1, -0.7,0.3]), logo: ()=>[P([-0.5,0.6, 0.5,0.6, 0.5,0.25, -0.4,0.05, 0.3,-0.1, 0.5,-0.15, 0.5,-0.6, -0.5,-0.6, -0.5,-0.25, 0.4,-0.05, -0.3,0.1, -0.5,0.15])] },
+        ford: { name: "Ford", cb: C_BLU, cl: C_WHT, 
+            base: ()=>Oval(1, 0.6), logo: ()=>[ORing(0.95, 0.55, 0.85, 0.45), Rect(-0.6,-0.1,0.2,0.3), Rect(-0.3,-0.1,0.2,0.3), Rect(0,-0.1,0.2,0.3), Rect(0.3,-0.1,0.2,0.3)] },
+        bmw: { name: "BMW", cb: C_BLK, cl: C_WHT, 
+            base: ()=>C(1), logo: ()=>{
+                let p = [Ring(0.95, 0.65), Ring(0.5, 0.45), Rect(-0.7,0.7,0.2,0.2), Rect(-0.1,0.7,0.2,0.2), Rect(0.5,0.7,0.2,0.2)];
+                let s1 = new THREE.Shape(); s1.moveTo(0,0); s1.arc(0,0, 0.45*W, 0, Math.PI/2); p.push(s1);
+                let s2 = new THREE.Shape(); s2.moveTo(0,0); s2.arc(0,0, 0.45*W, Math.PI, Math.PI*1.5); p.push(s2);
+                return p;
+            } 
+        },
+        peugeot: { name: "Peugeot", cb: C_BLK, cl: C_WHT, 
+            base: ()=>P([-0.9,0.9, 0.9,0.9, 0.9,-0.2, 0,-1, -0.9,-0.2]), logo: ()=>{
+                let sh = P([-0.8,0.8, 0.8,0.8, 0.8,-0.15, 0,-0.85, -0.8,-0.15]); sh.holes.push(P([-0.7,0.7, 0.7,0.7, 0.7,-0.1, 0,-0.75, -0.7,-0.1], true));
+                return [sh, P([-0.3,-0.5, -0.5,0.3, -0.2,0.6, 0.2,0.6, 0.5,0.2, 0.2,-0.2, 0.5,-0.6, 0.1,-0.6, -0.1,-0.3])]; } },
+        toyota: { name: "Toyota", cb: C_BLK, cl: C_WHT, 
+            base: ()=>Oval(1, 0.7), logo: ()=>[ORing(0.9, 0.6, 0.75, 0.45), ORing(0.55, 0.4, 0.4, 0.25), ORing(0.2, 0.55, 0.05, 0.15)] },
+        skoda: { name: "Skoda", cb: C_BLK, cl: C_WHT, 
+            base: ()=>C(1), logo: ()=>[Ring(0.9, 0.75), P([-0.5,-0.2, 0,0.5, 0.6,0.6, 0.4,0.1, 0.7,-0.1, 0.3,-0.4, -0.3,-0.4])] },
+        nissan: { name: "Nissan", cb: C_BLK, cl: C_WHT, 
+            base: ()=>C(1), logo: ()=>[Ring(0.9, 0.75), Rect(-1.1,-0.25, 2.2,0.5), Rect(-0.8,-0.1,0.2,0.2), Rect(-0.5,-0.1,0.2,0.2), Rect(-0.2,-0.1,0.4,0.2), Rect(0.3,-0.1,0.2,0.2), Rect(0.6,-0.1,0.2,0.2)] },
+        mitsubishi: { name: "Mitsubishi", cb: C_RED, cl: C_WHT, 
+            base: ()=>P([0,1, 0.45,0.2, 1,-0.8, 0.3,-0.8, 0,-0.2, -0.3,-0.8, -1,-0.8, -0.45,0.2]), logo: ()=>[P([0,0.85, 0.3,0.3, 0,-0.25, -0.3,0.3]), P([0.1,-0.35, 0.4,-0.35, 0.8,-0.7, 0.2,-0.7]), P([-0.1,-0.35, -0.4,-0.35, -0.8,-0.7, -0.2,-0.7])] },
+        mini: { name: "Mini", cb: C_BLK, cl: C_WHT, 
+            base: ()=>[C(0.6), Rect(-1.2, -0.3, 2.4, 0.6)], logo: ()=>[Ring(0.5, 0.4), Rect(-1.1,0.1,0.4,0.1), Rect(0.7,0.1,0.4,0.1), Rect(-1.1,-0.2,0.4,0.1), Rect(0.7,-0.2,0.4,0.1), Rect(-0.3,-0.1,0.1,0.2), Rect(-0.1,-0.1,0.1,0.2), Rect(0.1,-0.1,0.1,0.2)] },
+        audi: { name: "Audi", cb: C_BLK, cl: C_WHT, 
+            base: ()=>[offsetS(C(0.55), -0.45*W), offsetS(C(0.55), -0.15*W), offsetS(C(0.55), 0.15*W), offsetS(C(0.55), 0.45*W)], 
+            logo: ()=>[offsetS(Ring(0.5, 0.4), -0.45*W), offsetS(Ring(0.5, 0.4), -0.15*W), offsetS(Ring(0.5, 0.4), 0.15*W), offsetS(Ring(0.5, 0.4), 0.45*W)] },
+        volvo: { name: "Volvo", cb: C_BLK, cl: C_WHT, 
+            base: ()=>C(0.85), logo: ()=>[Ring(0.75, 0.65), P([0.5,0.5, 0.9,0.9, 0.9,0.4, 1,0.4, 1,1, 0.4,1, 0.4,0.9, 0.8,0.9, 0.4,0.5]), Rect(-0.9,-0.2, 1.8,0.4), Rect(-0.7,-0.1,0.2,0.2), Rect(-0.4,-0.1,0.2,0.2), Rect(-0.1,-0.1,0.2,0.2), Rect(0.2,-0.1,0.2,0.2), Rect(0.5,-0.1,0.2,0.2)] }
+    };
 
     function init3D() {
         const container = document.getElementById('canvas-container');
@@ -102,6 +185,14 @@
         dirLight.position.set(10, -20, 50);
         scene.add(dirLight);
 
+        // UI Select Menüsünü Doldur
+        const sel = document.getElementById('logoSelect');
+        Object.keys(BRANDS).forEach(k => {
+            let opt = document.createElement('option');
+            opt.value = k; opt.innerText = BRANDS[k].name;
+            sel.appendChild(opt);
+        });
+
         safeUpdate();
         animate();
     }
@@ -115,103 +206,12 @@
     }
 
     function safeUpdate() {
-        try {
-            updateKeychain();
-        } catch (e) {
+        try { updateKeychain(); } 
+        catch (e) {
             console.error("Çizim Hatası: ", e);
-            document.getElementById('status').innerText = "Çizim hatası, parametreleri kontrol edin.";
+            document.getElementById('status').innerText = "Çizim hatası oluştu.";
             document.getElementById('status').style.color = "red";
         }
-    }
-
-    function createLogoGeometry(logoType) {
-        const group = new THREE.Group();
-        const mat = new THREE.MeshStandardMaterial({ color: 0x00a8cc, roughness: 0.2 });
-
-        function addMesh(shape, depth = 1.2) {
-            const geom = new THREE.ExtrudeGeometry(shape, { depth: depth, bevelEnabled: false });
-            group.add(new THREE.Mesh(geom, mat));
-        }
-
-        if (logoType === 'tesla') {
-            const mainT = new THREE.Shape();
-            mainT.moveTo(-16, 8);
-            mainT.lineTo(16, 8);
-            mainT.lineTo(13, 3);
-            mainT.lineTo(4, 3);
-            mainT.lineTo(2, -14);
-            mainT.lineTo(-2, -14);
-            mainT.lineTo(-4, 3);
-            mainT.lineTo(-13, 3);
-            mainT.lineTo(-16, 8);
-            addMesh(mainT);
-
-            const topBar = new THREE.Shape();
-            topBar.moveTo(-18, 11);
-            topBar.lineTo(18, 11);
-            topBar.lineTo(19, 15);
-            topBar.lineTo(-19, 15);
-            topBar.lineTo(-18, 11);
-            addMesh(topBar);
-        } 
-        else if (logoType === 'bmw') {
-            const ring = new THREE.Shape();
-            ring.absarc(0, 0, 18, 0, Math.PI * 2, false);
-            const hole = new THREE.Path();
-            hole.absarc(0, 0, 14, 0, Math.PI * 2, true);
-            ring.holes.push(hole);
-            addMesh(ring);
-
-            const lineH = new THREE.Shape();
-            lineH.moveTo(-14, -1.5); lineH.lineTo(14, -1.5); lineH.lineTo(14, 1.5); lineH.lineTo(-14, 1.5); lineH.lineTo(-14, -1.5);
-            addMesh(lineH);
-
-            const lineV = new THREE.Shape();
-            lineV.moveTo(-1.5, -14); lineV.lineTo(1.5, -14); lineV.lineTo(1.5, 14); lineV.lineTo(-1.5, 14); lineV.lineTo(-1.5, -14);
-            addMesh(lineV);
-        } 
-        else if (logoType === 'ford') {
-            const oval = new THREE.Shape();
-            oval.absellipse(0, 0, 24, 12, 0, Math.PI * 2, false, 0);
-            const ovalHole = new THREE.Path();
-            ovalHole.absellipse(0, 0, 20, 8, 0, Math.PI * 2, true, 0);
-            oval.holes.push(ovalHole);
-            addMesh(oval);
-
-            const innerBar = new THREE.Shape();
-            innerBar.moveTo(-12, -2); innerBar.lineTo(12, -2); innerBar.lineTo(12, 2); innerBar.lineTo(-12, 2); innerBar.lineTo(-12, -2);
-            addMesh(innerBar);
-        } 
-        else if (logoType === 'audi') {
-            for (let i = -1.5; i <= 1.5; i += 1) {
-                const ring = new THREE.Shape();
-                ring.absarc(i * 10, 0, 7.5, 0, Math.PI * 2, false);
-                const h = new THREE.Path();
-                h.absarc(i * 10, 0, 5, 0, Math.PI * 2, true);
-                ring.holes.push(h);
-                addMesh(ring);
-            }
-        } 
-        else if (logoType === 'mercedes') {
-            const ring = new THREE.Shape();
-            ring.absarc(0, 0, 18, 0, Math.PI * 2, false);
-            const hole = new THREE.Path();
-            hole.absarc(0, 0, 15, 0, Math.PI * 2, true);
-            ring.holes.push(hole);
-            addMesh(ring);
-
-            for (let i = 0; i < 3; i++) {
-                const angle = i * ((2 * Math.PI) / 3);
-                const box = new THREE.Shape();
-                box.moveTo(-1.5, 0); box.lineTo(1.5, 0); box.lineTo(1.5, 15); box.lineTo(-1.5, 15); box.lineTo(-1.5, 0);
-                
-                const geom = new THREE.ExtrudeGeometry(box, { depth: 1.2, bevelEnabled: false });
-                const mesh = new THREE.Mesh(geom, mat);
-                mesh.rotation.z = -angle; 
-                group.add(mesh);
-            }
-        }
-        return group;
     }
 
     function handleSvgUpload(event) {
@@ -221,8 +221,7 @@
         reader.onload = function(e) {
             try {
                 const loader = new THREE.SVGLoader();
-                const svgData = loader.parse(e.target.result);
-                customSvgShapes = svgData.paths;
+                customSvgShapes = loader.parse(e.target.result).paths;
                 activeMode = 'custom';
                 document.getElementById('status').innerText = "Özel SVG başarıyla yüklendi!";
                 document.getElementById('status').style.color = "#007bff";
@@ -240,75 +239,93 @@
         if (keychainGroup) scene.remove(keychainGroup);
 
         keychainGroup = new THREE.Group();
-        const plateMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.3 });
 
         const width = parseFloat(document.getElementById('widthInput').value) || 70;
         const height = parseFloat(document.getElementById('heightInput').value) || 50;
         const thickness = parseFloat(document.getElementById('thicknessInput').value) || 3.5;
         const holeDia = parseFloat(document.getElementById('holeInput').value) || 4.5;
-        const logoType = document.getElementById('logoSelect').value;
+        
+        W = width / 2;
+        H = height / 2;
+        const extrudeSettings = { depth: thickness, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.1, bevelThickness: 0.1 };
+        const logoExtrude = { depth: 1.2, bevelEnabled: false };
 
-        // 1. Düzgün Formlu Ana Plaka 
-        const rectShape = new THREE.Shape();
-        const hw = width / 2;
-        const hh = height / 2;
-        const r = 5;
+        if (activeMode === 'preset') {
+            const b = BRANDS[document.getElementById('logoSelect').value];
+            const matBase = new THREE.MeshStandardMaterial({ color: b.cb, roughness: 0.3 });
+            const matLogo = new THREE.MeshStandardMaterial({ color: b.cl, roughness: 0.2 });
+            const matBMWBlue = new THREE.MeshStandardMaterial({ color: C_BLU, roughness: 0.2 });
 
-        rectShape.moveTo(-hw + r, -hh);
-        rectShape.lineTo(hw - r, -hh);
-        rectShape.quadraticCurveTo(hw, -hh, hw, -hh + r);
-        rectShape.lineTo(hw, hh - r);
-        rectShape.quadraticCurveTo(hw, hh, hw - r, hh);
-        rectShape.lineTo(-hw + r, hh);
-        rectShape.quadraticCurveTo(-hw, hh, -hw, hh - r);
-        rectShape.lineTo(-hw, -hh + r);
-        rectShape.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
+            // 1. Orijinal Kesimli Ana Plaka
+            let bases = b.base();
+            if (!Array.isArray(bases)) bases = [bases];
+            bases.forEach(shape => {
+                const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                const mesh = new THREE.Mesh(geo, matBase);
+                mesh.position.z = thickness / 2;
+                keychainGroup.add(mesh);
+            });
 
-        const extrudeSettings = { depth: thickness, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.15, bevelThickness: 0.15 };
-        const plateGeo = new THREE.ExtrudeGeometry(rectShape, extrudeSettings);
-        plateGeo.center();
-        const plateMesh = new THREE.Mesh(plateGeo, plateMaterial);
-        plateMesh.position.set(0, 0, thickness / 2);
-        keychainGroup.add(plateMesh);
+            // 2. Tepe Halka Kulakçığı (Tüm modellere tam hizalı eklenir)
+            const bossShape = new THREE.Shape();
+            bossShape.absarc(0, H + 2, (holeDia / 2) + 3, 0, Math.PI * 2, false);
+            const holePath = new THREE.Path();
+            holePath.absarc(0, H + 2, holeDia / 2, 0, Math.PI * 2, true);
+            bossShape.holes.push(holePath);
 
-        // 2. Deliği Barındıran Asma Kulakçığı
-        const bossShape = new THREE.Shape();
-        bossShape.absarc(0, 0, (holeDia / 2) + 3, 0, Math.PI * 2, false);
-        const holePath = new THREE.Path();
-        holePath.absarc(0, 0, holeDia / 2, 0, Math.PI * 2, true);
-        bossShape.holes.push(holePath);
+            const bossGeo = new THREE.ExtrudeGeometry(bossShape, extrudeSettings);
+            const bossMesh = new THREE.Mesh(bossGeo, matBase);
+            bossMesh.position.z = thickness / 2;
+            keychainGroup.add(bossMesh);
 
-        const bossGeo = new THREE.ExtrudeGeometry(bossShape, extrudeSettings);
-        bossGeo.center();
-        const bossMesh = new THREE.Mesh(bossGeo, plateMaterial);
-        // Doğrudan plakanın üst sınırına tam olarak oturacak şekilde pozisyonlanır
-        bossMesh.position.set(0, hh, thickness / 2); 
-        keychainGroup.add(bossMesh);
+            // 3. Renkli Logo Kabartması
+            let logos = b.logo();
+            logos.forEach((shape, idx) => {
+                const geo = new THREE.ExtrudeGeometry(shape, logoExtrude);
+                // BMW'nin özel mavi kadranlarını tespit et (array'in son 2 elemanı)
+                let useMat = matLogo;
+                if (b.name === "BMW" && idx >= logos.length - 2) useMat = matBMWBlue;
+                
+                const mesh = new THREE.Mesh(geo, useMat);
+                mesh.position.z = thickness; // Plakanın üzerine oturt
+                keychainGroup.add(mesh);
+            });
+        } 
+        else {
+            // Özel SVG Yükleme Modu (Dikdörtgen standart plaka)
+            const matBase = new THREE.MeshStandardMaterial({ color: C_BLK, roughness: 0.3 });
+            const matLogo = new THREE.MeshStandardMaterial({ color: C_WHT, roughness: 0.2 });
 
-        // 3. Logo Grubu
-        let logoGroup;
-        if (activeMode === 'custom' && customSvgShapes) {
-            logoGroup = new THREE.Group();
-            const customMat = new THREE.MeshStandardMaterial({ color: 0x00a8cc, roughness: 0.2 });
+            const rectShape = new THREE.Shape();
+            rectShape.moveTo(-W + 5, -H); rectShape.lineTo(W - 5, -H); rectShape.quadraticCurveTo(W, -H, W, -H + 5);
+            rectShape.lineTo(W, H); rectShape.quadraticCurveTo(W, H, W - 5, H); rectShape.lineTo(-W + 5, H);
+            rectShape.quadraticCurveTo(-W, H, -W, H - 5); rectShape.lineTo(-W, -H + 5); rectShape.quadraticCurveTo(-W, -H, -W + 5, -H);
+
+            const bossShape = new THREE.Shape();
+            bossShape.absarc(0, H + 2, (holeDia / 2) + 3, 0, Math.PI * 2, false);
+            const holeP = new THREE.Path(); holeP.absarc(0, H + 2, holeDia / 2, 0, Math.PI * 2, true);
+            bossShape.holes.push(holeP);
+
+            const pGeo = new THREE.ExtrudeGeometry([rectShape, bossShape], extrudeSettings);
+            const pMesh = new THREE.Mesh(pGeo, matBase);
+            pMesh.position.z = thickness / 2;
+            keychainGroup.add(pMesh);
+
+            const logoGroup = new THREE.Group();
             customSvgShapes.forEach(path => {
-                const shapes = path.toShapes(true);
-                shapes.forEach(shape => {
-                    const geom = new THREE.ExtrudeGeometry(shape, { depth: 1.2, bevelEnabled: false });
-                    logoGroup.add(new THREE.Mesh(geom, customMat));
+                path.toShapes(true).forEach(shape => {
+                    const geom = new THREE.ExtrudeGeometry(shape, logoExtrude);
+                    logoGroup.add(new THREE.Mesh(geom, matLogo));
                 });
             });
             const box = new THREE.Box3().setFromObject(logoGroup);
-            const size = new THREE.Vector3();
-            box.getSize(size);
-            const scale = Math.min((width - 16) / (size.x || 1), (height - 22) / (size.y || 1));
+            const size = new THREE.Vector3(); box.getSize(size);
+            const scale = Math.min((width - 10) / (size.x || 1), (height - 10) / (size.y || 1));
             logoGroup.scale.set(scale, -scale, 1);
-            logoGroup.position.set(- (size.x * scale) / 2, (size.y * scale) / 2 - 2, thickness);
-        } else {
-            logoGroup = createLogoGeometry(logoType);
-            logoGroup.position.set(0, -2, thickness);
+            logoGroup.position.set(- (size.x * scale) / 2, (size.y * scale) / 2, thickness);
+            keychainGroup.add(logoGroup);
         }
 
-        keychainGroup.add(logoGroup);
         scene.add(keychainGroup);
     }
 
@@ -319,14 +336,9 @@
     }
 
     function downloadSTL() {
-        if (!keychainGroup) {
-            alert("Model henüz yüklenmedi!");
-            return;
-        }
-
+        if (!keychainGroup) { alert("Model henüz yüklenmedi!"); return; }
         const exporter = new THREE.STLExporter();
         const result = exporter.parse(keychainGroup, { binary: true });
-
         const blob = new Blob([result], { type: 'application/octet-stream' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
