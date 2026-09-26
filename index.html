@@ -487,12 +487,11 @@ function buildLogoFromData(data, logoColor, width, height, zPosition) {
                     curveSegments: 16
                 });
                 
-                // KRİTİK FİLTRE: Hatalı (NaN) üreten şekilleri kontrol et ve ayıkla!
                 geometry.computeBoundingBox();
                 const bbox = geometry.boundingBox;
                 if (!bbox || !isFinite(bbox.min.x) || !isFinite(bbox.max.x)) {
                     geometry.dispose();
-                    continue; // Bozuk ve gruba zarar verecek geometrileri dahil etme
+                    continue; 
                 }
 
                 const material = new THREE.MeshStandardMaterial({
@@ -504,7 +503,6 @@ function buildLogoFromData(data, logoColor, width, height, zPosition) {
                 logoGroup.add(new THREE.Mesh(geometry, material));
                 shapeCount++;
             } catch(e) {
-                // Şekil hatalıysa yoksay ve çökmeyi önle
             }
         }
     }
@@ -545,10 +543,8 @@ function fitLogoToPlate(width, height, zPosition) {
     const scaleY = maxHeight / size.y;
     let scale = Math.min(scaleX, scaleY);
     
-    // Güvenlik: scale NaN veya 0 olmamalı
     if (!isFinite(scale) || scale <= 0) scale = 1;
 
-    // Y tersine çevrilir, Z KESİNLİKLE 1 kalır (kalınlık ezilmez)
     logoGroup.scale.set(scale, -scale, 1);
     logoGroup.updateMatrixWorld(true);
 
@@ -556,7 +552,6 @@ function fitLogoToPlate(width, height, zPosition) {
     const center = new THREE.Vector3();
     scaledBox.getCenter(center);
 
-    // X ve Y'yi ortala. Z'yi ise logonun alt tabanı tam plaka üstüne gelecek şekilde ayarla.
     logoGroup.position.x = -center.x;
     logoGroup.position.y = -center.y;
     logoGroup.position.z = zPosition - scaledBox.min.z;
