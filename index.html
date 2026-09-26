@@ -11,3894 +11,654 @@
 ========================================================= -->
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
 
-
 <style>
-
-* {
-    box-sizing: border-box;
-}
-
-html,
-body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-
-    font-family:
-        Inter,
-        Arial,
-        Helvetica,
-        sans-serif;
-
-    background:
-        radial-gradient(
-            circle at 20% 10%,
-            #252a32 0%,
-            #111419 38%,
-            #07090c 100%
-        );
-
+* { box-sizing: border-box; }
+html, body {
+    margin: 0; width: 100%; height: 100%; overflow: hidden;
+    font-family: Inter, Arial, Helvetica, sans-serif;
+    background: radial-gradient(circle at 20% 10%, #252a32 0%, #111419 38%, #07090c 100%);
     color: #f4f4f4;
 }
-
-
-/* =========================================================
-   APP
-========================================================= */
-
-.app {
-
-    width: 100vw;
-    height: 100vh;
-
-    display: flex;
-    flex-direction: column;
-}
-
-
-/* =========================================================
-   HEADER
-========================================================= */
-
+.app { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
 .header {
-
-    height: 68px;
-
-    flex-shrink: 0;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    padding:
-        0 22px;
-
-    background:
-        rgba(9, 11, 15, .94);
-
-    border-bottom:
-        1px solid rgba(255,255,255,.08);
-
-    backdrop-filter:
-        blur(12px);
-
-    z-index: 10;
+    height: 68px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 22px; background: rgba(9, 11, 15, .94);
+    border-bottom: 1px solid rgba(255,255,255,.08); backdrop-filter: blur(12px); z-index: 10;
 }
-
-
-.logo-title {
-
-    display: flex;
-    align-items: center;
-
-    gap: 12px;
-}
-
-
+.logo-title { display: flex; align-items: center; gap: 12px; }
 .logo-icon {
-
-    width: 40px;
-    height: 40px;
-
-    border-radius: 10px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffffff,
-            #888888
-        );
-
-    color: #111;
-
-    font-size: 16px;
-    font-weight: 900;
+    width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #ffffff, #888888); color: #111; font-size: 16px; font-weight: 900;
 }
-
-
-.header h1 {
-
-    margin: 0;
-
-    font-size: 17px;
-}
-
-
-.header small {
-
-    display: block;
-
-    margin-top: 4px;
-
-    color: #777;
-
-    font-size: 11px;
-}
-
-
-.version {
-
-    color: #666;
-
-    font-size: 11px;
-}
-
-
-/* =========================================================
-   MAIN
-========================================================= */
-
-.main {
-
-    flex: 1;
-
-    min-height: 0;
-
-    display: flex;
-}
-
-
-/* =========================================================
-   VIEWER
-========================================================= */
-
-.viewer {
-
-    position: relative;
-
-    flex: 1;
-
-    min-width: 0;
-
-    background:
-        #080a0e;
-}
-
-
-#canvas-container {
-
-    width: 100%;
-    height: 100%;
-}
-
-
+.header h1 { margin: 0; font-size: 17px; }
+.header small { display: block; margin-top: 4px; color: #777; font-size: 11px; }
+.version { color: #666; font-size: 11px; }
+.main { flex: 1; min-height: 0; display: flex; }
+.viewer { position: relative; flex: 1; min-width: 0; background: #080a0e; }
+#canvas-container { width: 100%; height: 100%; }
 .status {
-
-    position: absolute;
-
-    left: 18px;
-    bottom: 18px;
-
-    padding:
-        9px 13px;
-
-    border-radius: 8px;
-
-    background:
-        rgba(0,0,0,.62);
-
-    border:
-        1px solid rgba(255,255,255,.08);
-
-    color: #aaa;
-
-    font-size: 11px;
-
-    pointer-events: none;
+    position: absolute; left: 18px; bottom: 18px; padding: 9px 13px; border-radius: 8px;
+    background: rgba(0,0,0,.62); border: 1px solid rgba(255,255,255,.08); color: #aaa; font-size: 11px; pointer-events: none;
 }
-
-
-/* =========================================================
-   PANEL
-========================================================= */
-
 .panel {
-
-    width: 340px;
-
-    flex-shrink: 0;
-
-    padding: 18px;
-
-    overflow-y: auto;
-
-    background:
-        rgba(15,17,22,.97);
-
-    border-left:
-        1px solid rgba(255,255,255,.08);
+    width: 340px; flex-shrink: 0; padding: 18px; overflow-y: auto;
+    background: rgba(15,17,22,.97); border-left: 1px solid rgba(255,255,255,.08);
 }
-
-
-.section {
-
-    margin-bottom: 20px;
+.section { margin-bottom: 20px; }
+.section-title { margin-bottom: 10px; color: #777; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+label { display: block; margin-bottom: 6px; color: #aaa; font-size: 11px; }
+select, input[type="number"], input[type="file"] {
+    width: 100%; padding: 10px; outline: none; border: 1px solid #30343c; border-radius: 8px;
+    background: #0b0d11; color: #eee; font-size: 12px;
 }
-
-
-.section-title {
-
-    margin-bottom: 10px;
-
-    color: #777;
-
-    font-size: 10px;
-
-    font-weight: 700;
-
-    letter-spacing: 1.5px;
-
-    text-transform: uppercase;
-}
-
-
-label {
-
-    display: block;
-
-    margin-bottom: 6px;
-
-    color: #aaa;
-
-    font-size: 11px;
-}
-
-
-select,
-input[type="number"],
-input[type="file"] {
-
-    width: 100%;
-
-    padding: 10px;
-
-    outline: none;
-
-    border:
-        1px solid #30343c;
-
-    border-radius: 8px;
-
-    background:
-        #0b0d11;
-
-    color: #eee;
-
-    font-size: 12px;
-}
-
-
-select:focus,
-input[type="number"]:focus {
-
-    border-color:
-        #777;
-}
-
-
-.field {
-
-    margin-bottom: 10px;
-}
-
-
-.grid {
-
-    display: grid;
-
-    grid-template-columns:
-        1fr 1fr;
-
-    gap: 10px;
-}
-
-
-/* =========================================================
-   BRAND PREVIEW
-========================================================= */
-
+select:focus, input[type="number"]:focus { border-color: #777; }
+.field { margin-bottom: 10px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .brand-preview {
-
-    display: flex;
-    align-items: center;
-
-    gap: 10px;
-
-    margin-top: 9px;
-
-    padding: 10px;
-
-    border:
-        1px solid #252930;
-
-    border-radius: 8px;
-
-    background:
-        #0b0d11;
+    display: flex; align-items: center; gap: 10px; margin-top: 9px; padding: 10px;
+    border: 1px solid #252930; border-radius: 8px; background: #0b0d11;
 }
-
-
-.color-box {
-
-    width: 22px;
-    height: 22px;
-
-    flex-shrink: 0;
-
-    border-radius: 5px;
-
-    border:
-        1px solid rgba(255,255,255,.25);
-}
-
-
-.brand-name {
-
-    font-size: 12px;
-
-    font-weight: 700;
-}
-
-
-/* =========================================================
-   BUTTON
-========================================================= */
-
-.btn {
-
-    width: 100%;
-
-    padding: 13px;
-
-    border: 0;
-
-    border-radius: 9px;
-
-    font-size: 12px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition:
-        .2s ease;
-}
-
-
-.btn-primary {
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffffff,
-            #bcbcbc
-        );
-
-    color: #111;
-}
-
-
-.btn-primary:hover {
-
-    transform:
-        translateY(-1px);
-
-    filter:
-        brightness(1.08);
-}
-
-
-.btn-secondary {
-
-    margin-top: 8px;
-
-    background:
-        #20242b;
-
-    color: #ddd;
-
-    border:
-        1px solid #383d46;
-}
-
-
-.info {
-
-    margin-top: 8px;
-
-    color: #6f747d;
-
-    font-size: 10px;
-
-    line-height: 1.55;
-}
-
-
-/* =========================================================
-   DIMENSIONS
-========================================================= */
-
-.dimensions {
-
-    display: grid;
-
-    grid-template-columns:
-        1fr 1fr;
-
-    gap: 7px;
-
-    margin-top: 14px;
-}
-
-
-.dimension {
-
-    padding: 9px;
-
-    border:
-        1px solid #20242b;
-
-    border-radius: 7px;
-
-    background:
-        #0b0d11;
-}
-
-
-.dimension span {
-
-    display: block;
-
-    margin-bottom: 3px;
-
-    color: #555;
-
-    font-size: 8px;
-}
-
-
-.dimension strong {
-
-    font-size: 11px;
-}
-
-
-/* =========================================================
-   CUSTOM SVG STATUS
-========================================================= */
-
-.svg-status {
-
-    margin-top: 8px;
-
-    padding: 8px;
-
-    border-radius: 7px;
-
-    background:
-        #101319;
-
-    border:
-        1px solid #252a31;
-
-    color: #777;
-
-    font-size: 10px;
-
-    line-height: 1.4;
-}
-
-
-.svg-status.active {
-
-    color: #ddd;
-
-    border-color:
-        #414750;
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
+.color-box { width: 22px; height: 22px; flex-shrink: 0; border-radius: 5px; border: 1px solid rgba(255,255,255,.25); }
+.brand-name { font-size: 12px; font-weight: 700; }
+.btn { width: 100%; padding: 13px; border: 0; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; transition: .2s ease; }
+.btn-primary { background: linear-gradient(135deg, #ffffff, #bcbcbc); color: #111; }
+.btn-primary:hover { transform: translateY(-1px); filter: brightness(1.08); }
+.btn-secondary { margin-top: 8px; background: #20242b; color: #ddd; border: 1px solid #383d46; }
+.info { margin-top: 8px; color: #6f747d; font-size: 10px; line-height: 1.55; }
+.dimensions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 14px; }
+.dimension { padding: 9px; border: 1px solid #20242b; border-radius: 7px; background: #0b0d11; }
+.dimension span { display: block; margin-bottom: 3px; color: #555; font-size: 8px; }
+.dimension strong { font-size: 11px; }
+.svg-status { margin-top: 8px; padding: 8px; border-radius: 7px; background: #101319; border: 1px solid #252a31; color: #777; font-size: 10px; line-height: 1.4; }
+.svg-status.active { color: #ddd; border-color: #414750; }
 @media(max-width: 800px) {
-
-    body {
-        overflow: auto;
-    }
-
-    .main {
-
-        flex-direction: column;
-    }
-
-    .viewer {
-
-        height: 55vh;
-
-        min-height: 400px;
-    }
-
-    .panel {
-
-        width: 100%;
-
-        border-left: 0;
-
-        border-top:
-            1px solid rgba(255,255,255,.08);
-    }
-
+    body { overflow: auto; }
+    .main { flex-direction: column; }
+    .viewer { height: 55vh; min-height: 400px; }
+    .panel { width: 100%; border-left: 0; border-top: 1px solid rgba(255,255,255,.08); }
 }
-
 </style>
 </head>
 
-
 <body>
-
-
 <div class="app">
-
-
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
-
     <header class="header">
-
         <div class="logo-title">
-
-            <div class="logo-icon">
-                3D
-            </div>
-
+            <div class="logo-icon">3D</div>
             <div>
-
-                <h1>
-                    Parametrik Logo Anahtarlık Fabrikası
-                </h1>
-
-                <small>
-                    SVG → 3D → STL
-                </small>
-
+                <h1>Parametrik Logo Anahtarlık Fabrikası</h1>
+                <small>SVG → 3D → STL</small>
             </div>
-
         </div>
-
-
-        <div class="version">
-            Three.js r128
-        </div>
-
+        <div class="version">Three.js r128</div>
     </header>
 
-
-    <!-- =====================================================
-         MAIN
-    ====================================================== -->
-
     <main class="main">
-
-
-        <!-- =================================================
-             3D VIEWER
-        ================================================== -->
-
         <section class="viewer">
-
             <div id="canvas-container"></div>
-
-            <div
-                id="status"
-                class="status"
-            >
-                Model hazırlanıyor...
-            </div>
-
+            <div id="status" class="status">Model hazırlanıyor...</div>
         </section>
 
-
-        <!-- =================================================
-             CONTROL PANEL
-        ================================================== -->
-
         <aside class="panel">
-
-
-            <!-- =============================================
-                 BRAND
-            ============================================== -->
-
             <div class="section">
-
-                <div class="section-title">
-                    Marka
-                </div>
-
-
-                <label>
-                    Logo seç
-                </label>
-
-
+                <div class="section-title">Marka</div>
+                <label>Logo seç</label>
                 <select id="brandSelect">
-
-                    <option value="tesla">
-                        Tesla
-                    </option>
-
-                    <option value="bmw">
-                        BMW
-                    </option>
-
-                    <option value="ford">
-                        Ford
-                    </option>
-
-                    <option value="audi">
-                        Audi
-                    </option>
-
-                    <option value="mercedes">
-                        Mercedes
-                    </option>
-
-                    <option value="opel">
-                        Opel
-                    </option>
-
-                    <option value="renault">
-                        Renault
-                    </option>
-
-                    <option value="fiat">
-                        Fiat
-                    </option>
-
-                    <option value="honda">
-                        Honda
-                    </option>
-
-                    <option value="hyundai">
-                        Hyundai
-                    </option>
-
-                    <option value="volkswagen">
-                        VW
-                    </option>
-
-                    <option value="citroen">
-                        Citroen
-                    </option>
-
-                    <option value="suzuki">
-                        Suzuki
-                    </option>
-
-                    <option value="peugeot">
-                        Peugeot
-                    </option>
-
-                    <option value="toyota">
-                        Toyota
-                    </option>
-
-                    <option value="skoda">
-                        Skoda
-                    </option>
-
-                    <option value="nissan">
-                        Nissan
-                    </option>
-
-                    <option value="mitsubishi">
-                        Mitsubishi
-                    </option>
-
-                    <option value="mini">
-                        Mini
-                    </option>
-
-                    <option value="volvo">
-                        Volvo
-                    </option>
-
+                    <option value="tesla">Tesla</option>
+                    <option value="bmw">BMW</option>
+                    <option value="ford">Ford</option>
+                    <option value="audi">Audi</option>
+                    <option value="mercedes">Mercedes</option>
+                    <option value="opel">Opel</option>
+                    <option value="renault">Renault</option>
+                    <option value="fiat">Fiat</option>
+                    <option value="honda">Honda</option>
+                    <option value="hyundai">Hyundai</option>
+                    <option value="volkswagen">VW</option>
+                    <option value="citroen">Citroen</option>
+                    <option value="suzuki">Suzuki</option>
+                    <option value="peugeot">Peugeot</option>
+                    <option value="toyota">Toyota</option>
+                    <option value="skoda">Skoda</option>
+                    <option value="nissan">Nissan</option>
+                    <option value="mitsubishi">Mitsubishi</option>
+                    <option value="mini">Mini</option>
+                    <option value="volvo">Volvo</option>
                 </select>
-
-
                 <div class="brand-preview">
-
-                    <div
-                        id="colorPreview"
-                        class="color-box"
-                    ></div>
-
-                    <div
-                        id="brandName"
-                        class="brand-name"
-                    >
-                        Tesla
-                    </div>
-
+                    <div id="colorPreview" class="color-box"></div>
+                    <div id="brandName" class="brand-name">Tesla</div>
                 </div>
-
             </div>
 
-
-            <!-- =============================================
-                 PARAMETERS
-            ============================================== -->
-
             <div class="section">
-
-                <div class="section-title">
-                    Parametreler
-                </div>
-
-
+                <div class="section-title">Parametreler</div>
                 <div class="grid">
-
-
                     <div class="field">
-
-                        <label>
-                            Genişlik (mm)
-                        </label>
-
-                        <input
-                            id="width"
-                            type="number"
-                            value="70"
-                            min="25"
-                            max="200"
-                            step="1"
-                        >
-
+                        <label>Genişlik (mm)</label>
+                        <input id="width" type="number" value="70" min="25" max="200" step="1">
                     </div>
-
-
                     <div class="field">
-
-                        <label>
-                            Yükseklik (mm)
-                        </label>
-
-                        <input
-                            id="height"
-                            type="number"
-                            value="45"
-                            min="20"
-                            max="150"
-                            step="1"
-                        >
-
+                        <label>Yükseklik (mm)</label>
+                        <input id="height" type="number" value="45" min="20" max="150" step="1">
                     </div>
-
-
                     <div class="field">
-
-                        <label>
-                            Plaka Kalınlığı Z (mm)
-                        </label>
-
-                        <input
-                            id="thickness"
-                            type="number"
-                            value="3"
-                            min="1"
-                            max="15"
-                            step="0.1"
-                        >
-
+                        <label>Plaka Kalınlığı Z (mm)</label>
+                        <input id="thickness" type="number" value="3" min="1" max="15" step="0.1">
                     </div>
-
-
                     <div class="field">
-
-                        <label>
-                            Delik Çapı (mm)
-                        </label>
-
-                        <input
-                            id="hole"
-                            type="number"
-                            value="5"
-                            min="2"
-                            max="15"
-                            step="0.5"
-                        >
-
+                        <label>Delik Çapı (mm)</label>
+                        <input id="hole" type="number" value="5" min="2" max="15" step="0.5">
                     </div>
-
                 </div>
-
             </div>
 
-
-            <!-- =============================================
-                 CUSTOM SVG
-            ============================================== -->
-
             <div class="section">
-
-                <div class="section-title">
-                    Özel SVG
-                </div>
-
-
-                <input
-                    id="svgFile"
-                    type="file"
-                    accept=".svg,image/svg+xml"
-                >
-
-
-                <div
-                    id="svgStatus"
-                    class="svg-status"
-                >
-                    Özel SVG seçilmedi.
-                    Standart marka plakası kullanılıyor.
-                </div>
-
-
+                <div class="section-title">Özel SVG</div>
+                <input id="svgFile" type="file" accept=".svg,image/svg+xml">
+                <div id="svgStatus" class="svg-status">Özel SVG seçilmedi. Standart marka plakası kullanılıyor.</div>
                 <div class="info">
-
-                    Özel SVG yüklendiğinde:
-
-                    <br>
-                    • Beyaz arka plan temizlenir.
-                    <br>
-                    • fill="none" katmanları temizlenir.
-                    <br>
-                    • Görünmez katmanlar temizlenir.
-                    <br>
-                    • SVG canvas'ı değil gerçek logo alanı kullanılır.
-                    <br>
-                    • Logo otomatik merkezlenir.
-                    <br>
-                    • Logo plaka üzerine oturtulur.
-
+                    Özel SVG yüklendiğinde:<br>
+                    • Beyaz arka plan temizlenir.<br>
+                    • fill="none" katmanları temizlenir.<br>
+                    • Görünmez katmanlar temizlenir.<br>
+                    • Logo otomatik merkezlenir ve oturtulur.
                 </div>
-
             </div>
-
-
-            <!-- =============================================
-                 BUTTONS
-            ============================================== -->
 
             <div class="section">
-
-                <button
-                    id="downloadBtn"
-                    class="btn btn-primary"
-                >
-                    STL İndir
-                </button>
-
-
-                <button
-                    id="resetBtn"
-                    class="btn btn-secondary"
-                >
-                    Varsayılan Ayarlara Dön
-                </button>
-
+                <button id="downloadBtn" class="btn btn-primary">STL İndir</button>
+                <button id="resetBtn" class="btn btn-secondary">Varsayılan Ayarlara Dön</button>
             </div>
-
-
-            <!-- =============================================
-                 DIMENSIONS
-            ============================================== -->
 
             <div class="dimensions">
-
                 <div class="dimension">
-
-                    <span>
-                        MODEL
-                    </span>
-
-                    <strong id="dimensionText">
-                        70 × 45 mm
-                    </strong>
-
+                    <span>MODEL</span>
+                    <strong id="dimensionText">70 × 45 mm</strong>
                 </div>
-
-
                 <div class="dimension">
-
-                    <span>
-                        KALINLIK
-                    </span>
-
-                    <strong id="thicknessText">
-                        3 mm
-                    </strong>
-
+                    <span>KALINLIK</span>
+                    <strong id="thicknessText">3 mm</strong>
                 </div>
-
             </div>
-
 
             <div class="info">
-
-                🖱 Sol tuş: Döndür
-                <br>
-
-                🖱 Sağ tuş: Pan
-                <br>
-
+                🖱 Sol tuş: Döndür<br>
+                🖱 Sağ tuş: Pan<br>
                 🖱 Tekerlek: Zoom
-
             </div>
-
-
         </aside>
-
     </main>
-
 </div>
 
-
 <script>
-
-/* =========================================================
-   GLOBAL
-========================================================= */
-
-let scene;
-let camera;
-let renderer;
-let controls;
-
+let scene, camera, renderer, controls;
 let productGroup = null;
-
-let plateMesh = null;
-let ringMesh = null;
-let logoGroup = null;
-
+let plateMesh = null, ringMesh = null, logoGroup = null;
 let customSVGActive = false;
+let currentCustomSVGText = null;
 
-
-/* =========================================================
-   DOM
-========================================================= */
-
-const container =
-    document.getElementById(
-        "canvas-container"
-    );
-
-
-const statusEl =
-    document.getElementById(
-        "status"
-    );
-
-
-const brandSelect =
-    document.getElementById(
-        "brandSelect"
-    );
-
-
-const widthInput =
-    document.getElementById(
-        "width"
-    );
-
-
-const heightInput =
-    document.getElementById(
-        "height"
-    );
-
-
-const thicknessInput =
-    document.getElementById(
-        "thickness"
-    );
-
-
-const holeInput =
-    document.getElementById(
-        "hole"
-    );
-
-
-const svgFile =
-    document.getElementById(
-        "svgFile"
-    );
-
-
-const svgStatus =
-    document.getElementById(
-        "svgStatus"
-    );
-
-
-const brandNameEl =
-    document.getElementById(
-        "brandName"
-    );
-
-
-const colorPreview =
-    document.getElementById(
-        "colorPreview"
-    );
-
-
-const dimensionText =
-    document.getElementById(
-        "dimensionText"
-    );
-
-
-const thicknessText =
-    document.getElementById(
-        "thicknessText"
-    );
-
-
-/* =========================================================
-   BRAND DATABASE
-========================================================= */
+const container = document.getElementById("canvas-container");
+const statusEl = document.getElementById("status");
+const brandSelect = document.getElementById("brandSelect");
+const widthInput = document.getElementById("width");
+const heightInput = document.getElementById("height");
+const thicknessInput = document.getElementById("thickness");
+const holeInput = document.getElementById("hole");
+const svgFile = document.getElementById("svgFile");
+const svgStatus = document.getElementById("svgStatus");
+const brandNameEl = document.getElementById("brandName");
+const colorPreview = document.getElementById("colorPreview");
+const dimensionText = document.getElementById("dimensionText");
+const thicknessText = document.getElementById("thicknessText");
 
 const BRANDS = {
-
-
-    tesla: {
-
-        name: "Tesla",
-
-        slug: "tesla",
-
-        base: "#f4f4f4",
-
-        logo: "#c8102e",
-
-        plate: "rounded"
-
-    },
-
-
-    bmw: {
-
-        name: "BMW",
-
-        slug: "bmw",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "circle"
-
-    },
-
-
-    ford: {
-
-        name: "Ford",
-
-        slug: "ford",
-
-        base: "#1464a5",
-
-        logo: "#ffffff",
-
-        plate: "oval"
-
-    },
-
-
-    audi: {
-
-        name: "Audi",
-
-        slug: "audi",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "rounded"
-
-    },
-
-
-    mercedes: {
-
-        name: "Mercedes",
-
-        slug: "mercedes",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "circle"
-
-    },
-
-
-    opel: {
-
-        name: "Opel",
-
-        slug: "opel",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "circle"
-
-    },
-
-
-    renault: {
-
-        name: "Renault",
-
-        slug: "renault",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "diamond"
-
-    },
-
-
-    fiat: {
-
-        name: "Fiat",
-
-        slug: "fiat",
-
-        base: "#c8102e",
-
-        logo: "#ffffff",
-
-        plate: "circle"
-
-    },
-
-
-    honda: {
-
-        name: "Honda",
-
-        slug: "honda",
-
-        base: "#d71920",
-
-        logo: "#ffffff",
-
-        plate: "rounded"
-
-    },
-
-
-    hyundai: {
-
-        name: "Hyundai",
-
-        slug: "hyundai",
-
-        base: "#1464a5",
-
-        logo: "#ffffff",
-
-        plate: "oval"
-
-    },
-
-
-    volkswagen: {
-
-        name: "Volkswagen",
-
-        slug: "volkswagen",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "circle"
-
-    },
-
-
-    citroen: {
-
-        name: "Citroen",
-
-        slug: "citroen",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "rounded"
-
-    },
-
-
-    suzuki: {
-
-        name: "Suzuki",
-
-        slug: "suzuki",
-
-        base: "#d71920",
-
-        logo: "#ffffff",
-
-        plate: "rounded"
-
-    },
-
-
-    peugeot: {
-
-        name: "Peugeot",
-
-        slug: "peugeot",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "shield"
-
-    },
-
-
-    toyota: {
-
-        name: "Toyota",
-
-        slug: "toyota",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "circle"
-
-    },
-
-
-    skoda: {
-
-        name: "Skoda",
-
-        slug: "skoda",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "circle"
-
-    },
-
-
-    nissan: {
-
-        name: "Nissan",
-
-        slug: "nissan",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "circle"
-
-    },
-
-
-    mitsubishi: {
-
-        name: "Mitsubishi",
-
-        slug: "mitsubishi",
-
-        base: "#d71920",
-
-        logo: "#ffffff",
-
-        plate: "diamond"
-
-    },
-
-
-    mini: {
-
-        name: "Mini",
-
-        slug: "mini",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "rounded"
-
-    },
-
-
-    volvo: {
-
-        name: "Volvo",
-
-        slug: "volvo",
-
-        base: "#111111",
-
-        logo: "#ffffff",
-
-        plate: "circle"
-
-    }
-
+    tesla: { name: "Tesla", slug: "tesla", base: "#f4f4f4", logo: "#c8102e", plate: "rounded" },
+    bmw: { name: "BMW", slug: "bmw", base: "#111111", logo: "#ffffff", plate: "circle" },
+    ford: { name: "Ford", slug: "ford", base: "#1464a5", logo: "#ffffff", plate: "oval" },
+    audi: { name: "Audi", slug: "audi", base: "#111111", logo: "#ffffff", plate: "rounded" },
+    mercedes: { name: "Mercedes", slug: "mercedes", base: "#111111", logo: "#ffffff", plate: "circle" },
+    opel: { name: "Opel", slug: "opel", base: "#111111", logo: "#ffffff", plate: "circle" },
+    renault: { name: "Renault", slug: "renault", base: "#111111", logo: "#ffffff", plate: "diamond" },
+    fiat: { name: "Fiat", slug: "fiat", base: "#c8102e", logo: "#ffffff", plate: "circle" },
+    honda: { name: "Honda", slug: "honda", base: "#d71920", logo: "#ffffff", plate: "rounded" },
+    hyundai: { name: "Hyundai", slug: "hyundai", base: "#1464a5", logo: "#ffffff", plate: "oval" },
+    volkswagen: { name: "Volkswagen", slug: "volkswagen", base: "#111111", logo: "#ffffff", plate: "circle" },
+    citroen: { name: "Citroen", slug: "citroen", base: "#111111", logo: "#ffffff", plate: "rounded" },
+    suzuki: { name: "Suzuki", slug: "suzuki", base: "#d71920", logo: "#ffffff", plate: "rounded" },
+    peugeot: { name: "Peugeot", slug: "peugeot", base: "#111111", logo: "#ffffff", plate: "shield" },
+    toyota: { name: "Toyota", slug: "toyota", base: "#111111", logo: "#ffffff", plate: "circle" },
+    skoda: { name: "Skoda", slug: "skoda", base: "#111111", logo: "#ffffff", plate: "circle" },
+    nissan: { name: "Nissan", slug: "nissan", base: "#111111", logo: "#ffffff", plate: "circle" },
+    mitsubishi: { name: "Mitsubishi", slug: "mitsubishi", base: "#d71920", logo: "#ffffff", plate: "diamond" },
+    mini: { name: "Mini", slug: "mini", base: "#111111", logo: "#ffffff", plate: "rounded" },
+    volvo: { name: "Volvo", slug: "volvo", base: "#111111", logo: "#ffffff", plate: "circle" }
 };
 
-
-/* =========================================================
-   INITIALIZE
-========================================================= */
-
 function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x080a0e);
 
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, -10, 90);
 
-    scene =
-        new THREE.Scene();
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    container.appendChild(renderer.domElement);
 
-
-    scene.background =
-        new THREE.Color(
-            0x080a0e
-        );
-
-
-    camera =
-        new THREE.PerspectiveCamera(
-            45,
-            container.clientWidth /
-            container.clientHeight,
-            0.1,
-            1000
-        );
-
-
-    camera.position.set(
-        0,
-        -10,
-        90
-    );
-
-
-    renderer =
-        new THREE.WebGLRenderer({
-            antialias: true,
-            alpha: false
-        });
-
-
-    renderer.setPixelRatio(
-        Math.min(
-            window.devicePixelRatio,
-            2
-        )
-    );
-
-
-    renderer.setSize(
-        container.clientWidth,
-        container.clientHeight
-    );
-
-
-    renderer.outputEncoding =
-        THREE.sRGBEncoding;
-
-
-    container.appendChild(
-        renderer.domElement
-    );
-
-
-    controls =
-        new THREE.OrbitControls(
-            camera,
-            renderer.domElement
-        );
-
-
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-
     controls.dampingFactor = 0.07;
-
     controls.enablePan = true;
-
     controls.minDistance = 15;
-
     controls.maxDistance = 300;
 
+    scene.add(new THREE.AmbientLight(0xffffff, 1.7));
+    
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+    keyLight.position.set(50, 60, 100);
+    scene.add(keyLight);
 
-    /* =============================================
-       LIGHTS
-    ============================================== */
+    const fillLight = new THREE.DirectionalLight(0x9dbaff, 0.9);
+    fillLight.position.set(-70, -30, 60);
+    scene.add(fillLight);
 
-
-    const ambient =
-        new THREE.AmbientLight(
-            0xffffff,
-            1.7
-        );
-
-
-    scene.add(
-        ambient
-    );
-
-
-    const keyLight =
-        new THREE.DirectionalLight(
-            0xffffff,
-            2.4
-        );
-
-
-    keyLight.position.set(
-        50,
-        60,
-        100
-    );
-
-
-    scene.add(
-        keyLight
-    );
-
-
-    const fillLight =
-        new THREE.DirectionalLight(
-            0x9dbaff,
-            0.9
-        );
-
-
-    fillLight.position.set(
-        -70,
-        -30,
-        60
-    );
-
-
-    scene.add(
-        fillLight
-    );
-
-
-    const rimLight =
-        new THREE.DirectionalLight(
-            0xffffff,
-            1
-        );
-
-
-    rimLight.position.set(
-        0,
-        -80,
-        -40
-    );
-
-
-    scene.add(
-        rimLight
-    );
-
+    const rimLight = new THREE.DirectionalLight(0xffffff, 1);
+    rimLight.position.set(0, -80, -40);
+    scene.add(rimLight);
 
     createGrid();
-
-
     createModel();
-
-
     animate();
-
 }
-
-
-/* =========================================================
-   GRID
-========================================================= */
 
 function createGrid() {
-
-
-    const grid =
-        new THREE.GridHelper(
-            300,
-            30,
-            0x333840,
-            0x181b20
-        );
-
-
-    grid.rotation.x =
-        Math.PI / 2;
-
-
-    grid.position.z =
-        -7;
-
-
-    scene.add(
-        grid
-    );
-
+    const grid = new THREE.GridHelper(300, 30, 0x333840, 0x181b20);
+    grid.rotation.x = Math.PI / 2;
+    grid.position.z = -7;
+    scene.add(grid);
 }
 
+function roundedRectShape(width, height, radius) {
+    const shape = new THREE.Shape();
+    const x = -width / 2;
+    const y = -height / 2;
+    radius = Math.min(radius, width / 2, height / 2);
 
-/* =========================================================
-   ROUNDED RECTANGLE
-========================================================= */
-
-function roundedRectShape(
-    width,
-    height,
-    radius
-) {
-
-
-    const shape =
-        new THREE.Shape();
-
-
-    const x =
-        -width / 2;
-
-
-    const y =
-        -height / 2;
-
-
-    radius =
-        Math.min(
-            radius,
-            width / 2,
-            height / 2
-        );
-
-
-    shape.moveTo(
-        x + radius,
-        y
-    );
-
-
-    shape.lineTo(
-        x + width - radius,
-        y
-    );
-
-
-    shape.quadraticCurveTo(
-        x + width,
-        y,
-        x + width,
-        y + radius
-    );
-
-
-    shape.lineTo(
-        x + width,
-        y + height - radius
-    );
-
-
-    shape.quadraticCurveTo(
-        x + width,
-        y + height,
-        x + width - radius,
-        y + height
-    );
-
-
-    shape.lineTo(
-        x + radius,
-        y + height
-    );
-
-
-    shape.quadraticCurveTo(
-        x,
-        y + height,
-        x,
-        y + height - radius
-    );
-
-
-    shape.lineTo(
-        x,
-        y + radius
-    );
-
-
-    shape.quadraticCurveTo(
-        x,
-        y,
-        x + radius,
-        y
-    );
-
-
+    shape.moveTo(x + radius, y);
+    shape.lineTo(x + width - radius, y);
+    shape.quadraticCurveTo(x + width, y, x + width, y + radius);
+    shape.lineTo(x + width, y + height - radius);
+    shape.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    shape.lineTo(x + radius, y + height);
+    shape.quadraticCurveTo(x, y + height, x, y + height - radius);
+    shape.lineTo(x, y + radius);
+    shape.quadraticCurveTo(x, y, x + radius, y);
     shape.closePath();
-
-
     return shape;
-
 }
 
-
-/* =========================================================
-   PLATE SHAPE
-========================================================= */
-
-function createPlateShape(
-    type,
-    width,
-    height
-) {
-
-
-    /* =============================================
-       CIRCLE
-    ============================================== */
-
+function createPlateShape(type, width, height) {
     if (type === "circle") {
-
-
-        const radius =
-            Math.min(
-                width,
-                height
-            ) / 2;
-
-
-        const shape =
-            new THREE.Shape();
-
-
-        shape.absarc(
-            0,
-            0,
-            radius,
-            0,
-            Math.PI * 2,
-            false
-        );
-
-
+        const radius = Math.min(width, height) / 2;
+        const shape = new THREE.Shape();
+        shape.absarc(0, 0, radius, 0, Math.PI * 2, false);
         return shape;
-
     }
-
-
-    /* =============================================
-       OVAL
-    ============================================== */
-
     if (type === "oval") {
-
-
-        const shape =
-            new THREE.Shape();
-
-
-        const rx =
-            width / 2;
-
-
-        const ry =
-            height / 2;
-
-
-        for (
-            let i = 0;
-            i <= 96;
-            i++
-        ) {
-
-
-            const a =
-                i /
-                96 *
-                Math.PI *
-                2;
-
-
-            const x =
-                Math.cos(a) *
-                rx;
-
-
-            const y =
-                Math.sin(a) *
-                ry;
-
-
-            if (i === 0) {
-
-                shape.moveTo(
-                    x,
-                    y
-                );
-
-            } else {
-
-                shape.lineTo(
-                    x,
-                    y
-                );
-
-            }
-
+        const shape = new THREE.Shape();
+        const rx = width / 2, ry = height / 2;
+        for (let i = 0; i <= 96; i++) {
+            const a = (i / 96) * Math.PI * 2;
+            const x = Math.cos(a) * rx;
+            const y = Math.sin(a) * ry;
+            if (i === 0) shape.moveTo(x, y); else shape.lineTo(x, y);
         }
-
-
         return shape;
-
     }
-
-
-    /* =============================================
-       DIAMOND
-    ============================================== */
-
     if (type === "diamond") {
-
-
-        const shape =
-            new THREE.Shape();
-
-
-        shape.moveTo(
-            0,
-            height / 2
-        );
-
-
-        shape.lineTo(
-            width / 2,
-            0
-        );
-
-
-        shape.lineTo(
-            0,
-            -height / 2
-        );
-
-
-        shape.lineTo(
-            -width / 2,
-            0
-        );
-
-
+        const shape = new THREE.Shape();
+        shape.moveTo(0, height / 2);
+        shape.lineTo(width / 2, 0);
+        shape.lineTo(0, -height / 2);
+        shape.lineTo(-width / 2, 0);
         shape.closePath();
-
-
         return shape;
-
     }
-
-
-    /* =============================================
-       SHIELD
-    ============================================== */
-
     if (type === "shield") {
-
-
-        const shape =
-            new THREE.Shape();
-
-
-        shape.moveTo(
-            -width / 2,
-            height / 2
-        );
-
-
-        shape.lineTo(
-            width / 2,
-            height / 2
-        );
-
-
-        shape.lineTo(
-            width / 2,
-            0
-        );
-
-
-        shape.quadraticCurveTo(
-            width / 2,
-            -height * .30,
-            0,
-            -height / 2
-        );
-
-
-        shape.quadraticCurveTo(
-            -width / 2,
-            -height * .30,
-            -width / 2,
-            0
-        );
-
-
+        const shape = new THREE.Shape();
+        shape.moveTo(-width / 2, height / 2);
+        shape.lineTo(width / 2, height / 2);
+        shape.lineTo(width / 2, 0);
+        shape.quadraticCurveTo(width / 2, -height * .30, 0, -height / 2);
+        shape.quadraticCurveTo(-width / 2, -height * .30, -width / 2, 0);
         shape.closePath();
-
-
         return shape;
-
     }
-
-
-    /* =============================================
-       DEFAULT
-    ============================================== */
-
-    return roundedRectShape(
-        width,
-        height,
-        Math.min(
-            width,
-            height
-        ) * .16
-    );
-
+    return roundedRectShape(width, height, Math.min(width, height) * .16);
 }
-
-
-/* =========================================================
-   CREATE MODEL
-========================================================= */
 
 async function createModel() {
-
-
     if (productGroup) {
-
-        disposeGroup(
-            productGroup
-        );
-
-        scene.remove(
-            productGroup
-        );
-
+        disposeGroup(productGroup);
+        scene.remove(productGroup);
     }
 
+    productGroup = new THREE.Group();
+    scene.add(productGroup);
 
-    productGroup =
-        new THREE.Group();
+    const width = Math.max(25, Number(widthInput.value));
+    const height = Math.max(20, Number(heightInput.value));
+    const thickness = Math.max(1, Number(thicknessInput.value));
+    const holeDiameter = Math.max(2, Number(holeInput.value));
+    const brand = BRANDS[brandSelect.value];
 
+    updateInterface(brand, width, height, thickness);
+    statusEl.textContent = "Model oluşturuluyor...";
 
-    scene.add(
-        productGroup
-    );
-
-
-    const width =
-        Math.max(
-            25,
-            Number(
-                widthInput.value
-            )
-        );
-
-
-    const height =
-        Math.max(
-            20,
-            Number(
-                heightInput.value
-            )
-        );
-
-
-    const thickness =
-        Math.max(
-            1,
-            Number(
-                thicknessInput.value
-            )
-        );
-
-
-    const holeDiameter =
-        Math.max(
-            2,
-            Number(
-                holeInput.value
-            )
-        );
-
-
-    const brand =
-        BRANDS[
-            brandSelect.value
-        ];
-
-
-    updateInterface(
-        brand,
-        width,
-        height,
-        thickness
-    );
-
-
-    statusEl.textContent =
-        "Model oluşturuluyor...";
-
-
-    /* =====================================================
-       PLAKA
-
-       Özel SVG varsa:
-       DAİRESEL / MARKA ŞEKLİ DEĞİL,
-       YUVARLATILMIŞ DİKDÖRTGEN.
-    ====================================================== */
-
-
-    let plateType =
-        brand.plate;
-
-
-    if (customSVGActive) {
-
-        plateType =
-            "rounded";
-
-    }
-
-
-    const plateShape =
-        createPlateShape(
-            plateType,
-            width,
-            height
-        );
-
-
-    const plateGeometry =
-        new THREE.ExtrudeGeometry(
-            plateShape,
-            {
-
-                depth:
-                    thickness,
-
-                bevelEnabled:
-                    true,
-
-                bevelSegments:
-                    3,
-
-                bevelSize:
-                    .5,
-
-                bevelThickness:
-                    .35,
-
-                curveSegments:
-                    48
-
-            }
-        );
-
-
-    /* =============================================
-       MERKEZLE
-    ============================================== */
+    let plateType = customSVGActive ? "rounded" : brand.plate;
+    const plateShape = createPlateShape(plateType, width, height);
+    
+    const plateGeometry = new THREE.ExtrudeGeometry(plateShape, {
+        depth: thickness,
+        bevelEnabled: true,
+        bevelSegments: 3,
+        bevelSize: .5,
+        bevelThickness: .35,
+        curveSegments: 48
+    });
 
     plateGeometry.computeBoundingBox();
+    const plateCenter = new THREE.Vector3();
+    plateGeometry.boundingBox.getCenter(plateCenter);
+    plateGeometry.translate(-plateCenter.x, -plateCenter.y, 0);
 
+    const plateMaterial = new THREE.MeshStandardMaterial({
+        color: brand.base,
+        metalness: .35,
+        roughness: .28,
+        side: THREE.DoubleSide
+    });
 
-    const plateCenter =
-        new THREE.Vector3();
-
-
-    plateGeometry.boundingBox.getCenter(
-        plateCenter
-    );
-
-
-    plateGeometry.translate(
-        -plateCenter.x,
-        -plateCenter.y,
-        0
-    );
-
-
-    /* =============================================
-       MATERIAL
-    ============================================== */
-
-    const plateMaterial =
-        new THREE.MeshStandardMaterial({
-
-            color:
-                brand.base,
-
-            metalness:
-                .35,
-
-            roughness:
-                .28,
-
-            side:
-                THREE.DoubleSide
-
-        });
-
-
-    plateMesh =
-        new THREE.Mesh(
-            plateGeometry,
-            plateMaterial
-        );
-
-
-    productGroup.add(
-        plateMesh
-    );
-
-
-    /* =====================================================
-       PLATE BOUNDING BOX
-    ====================================================== */
+    plateMesh = new THREE.Mesh(plateGeometry, plateMaterial);
+    productGroup.add(plateMesh);
 
     plateMesh.geometry.computeBoundingBox();
+    const maxY = plateMesh.geometry.boundingBox.max.y;
 
+    const bossRadius = Math.max(holeDiameter / 2 + 2.5, 4);
+    const holeRadius = holeDiameter / 2;
+    const bossY = maxY + bossRadius - 1.5;
 
-    const plateBox =
-        plateMesh.geometry.boundingBox;
+    const ringShape = new THREE.Shape();
+    ringShape.absarc(0, 0, bossRadius, 0, Math.PI * 2, false);
+    const ringHole = new THREE.Path();
+    ringHole.absarc(0, 0, holeRadius, 0, Math.PI * 2, true);
+    ringShape.holes.push(ringHole);
 
+    const ringGeometry = new THREE.ExtrudeGeometry(ringShape, {
+        depth: thickness,
+        bevelEnabled: true,
+        bevelSegments: 3,
+        bevelSize: .35,
+        bevelThickness: .25,
+        curveSegments: 48
+    });
 
-    const maxY =
-        plateBox.max.y;
+    const ringMaterial = new THREE.MeshStandardMaterial({
+        color: brand.base,
+        metalness: .35,
+        roughness: .28,
+        side: THREE.DoubleSide
+    });
 
+    ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+    ringMesh.position.set(0, bossY, 0);
+    productGroup.add(ringMesh);
 
-    /* =====================================================
-       RING / BOSS
-    ====================================================== */
-
-    const bossRadius =
-        Math.max(
-            holeDiameter / 2 + 2.5,
-            4
-        );
-
-
-    const holeRadius =
-        holeDiameter / 2;
-
-
-    /*
-       KESİN İSTENEN FORMÜL:
-
-       Y =
-       maxY +
-       bossRadius -
-       1.5
-    */
-
-    const bossY =
-        maxY +
-        bossRadius -
-        1.5;
-
-
-    const ringShape =
-        new THREE.Shape();
-
-
-    ringShape.absarc(
-        0,
-        0,
-        bossRadius,
-        0,
-        Math.PI * 2,
-        false
-    );
-
-
-    const ringHole =
-        new THREE.Path();
-
-
-    ringHole.absarc(
-        0,
-        0,
-        holeRadius,
-        0,
-        Math.PI * 2,
-        true
-    );
-
-
-    ringShape.holes.push(
-        ringHole
-    );
-
-
-    const ringGeometry =
-        new THREE.ExtrudeGeometry(
-            ringShape,
-            {
-
-                depth:
-                    thickness,
-
-                bevelEnabled:
-                    true,
-
-                bevelSegments:
-                    3,
-
-                bevelSize:
-                    .35,
-
-                bevelThickness:
-                    .25,
-
-                curveSegments:
-                    48
-
-            }
-        );
-
-
-    const ringMaterial =
-        new THREE.MeshStandardMaterial({
-
-            color:
-                brand.base,
-
-            metalness:
-                .35,
-
-            roughness:
-                .28,
-
-            side:
-                THREE.DoubleSide
-
-        });
-
-
-    ringMesh =
-        new THREE.Mesh(
-            ringGeometry,
-            ringMaterial
-        );
-
-
-    ringMesh.position.set(
-        0,
-        bossY,
-        0
-    );
-
-
-    productGroup.add(
-        ringMesh
-    );
-
-
-    /* =====================================================
-       LOGO
-    ====================================================== */
-
-    if (customSVGActive) {
-
-        const svgText =
-            window.currentCustomSVG;
-
-
-        if (svgText) {
-
-            buildLogoFromSVGText(
-                svgText,
-                brand.logo,
-                width,
-                height,
-                thickness
-            );
-
-        }
-
+    if (customSVGActive && currentCustomSVGText) {
+        processSVGData(currentCustomSVGText, brand.logo, width, height, thickness);
     } else {
-
-        await loadBrandLogo(
-            brand,
-            width,
-            height,
-            thickness
-        );
-
+        await loadBrandLogo(brand, width, height, thickness);
     }
-
-
-    /*
-       SADECE X/Y MERKEZLE.
-
-       ÇOK ÖNEMLİ:
-
-       ARTIK Z EKSENİNDE MODELİ ORTALAMIYORUZ.
-
-       Böylece logo:
-
-       Z = thickness
-
-       seviyesinde kalıyor.
-    */
 
     centerProductXY();
-
-
-    /* =============================================
-       KAMERA HEDEFİ
-    ============================================== */
-
-    controls.target.set(
-        0,
-        0,
-        thickness / 2
-    );
-
-
+    controls.target.set(0, 0, thickness / 2);
     controls.update();
-
-
-    statusEl.textContent =
-        "Hazır — modeli döndürerek inceleyebilirsin.";
-
+    statusEl.textContent = "Hazır — modeli döndürerek inceleyebilirsin.";
 }
 
-
-/* =========================================================
-   BRAND LOGO LOAD
-========================================================= */
-
-function loadBrandLogo(
-    brand,
-    width,
-    height,
-    thickness
-) {
-
-
-    return new Promise(
-        function(resolve) {
-
-
-            if (logoGroup) {
-
-                disposeGroup(
-                    logoGroup
-                );
-
-                productGroup.remove(
-                    logoGroup
-                );
-
-            }
-
-
-            logoGroup =
-                new THREE.Group();
-
-
-            productGroup.add(
-                logoGroup
-            );
-
-
-            const url =
-                "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/" +
-                brand.slug +
-                ".svg";
-
-
-            const loader =
-                new THREE.SVGLoader();
-
-
-            loader.load(
-
-                url,
-
-                function(data) {
-
-
-                    buildLogoFromData(
-                        data,
-                        brand.logo,
-                        width,
-                        height,
-                        thickness
-                    );
-
-
-                    resolve();
-
-                },
-
-
-                undefined,
-
-
-                function(error) {
-
-
-                    console.warn(
-                        "Logo yüklenemedi:",
-                        error
-                    );
-
-
-                    statusEl.textContent =
-                        "Logo yüklenemedi. Plaka oluşturuldu.";
-
-
-                    resolve();
-
-                }
-
-            );
-
+function loadBrandLogo(brand, width, height, thickness) {
+    return new Promise(function(resolve) {
+        if (logoGroup) {
+            disposeGroup(logoGroup);
+            productGroup.remove(logoGroup);
         }
-    );
+        logoGroup = new THREE.Group();
+        productGroup.add(logoGroup);
 
+        const url = "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/" + brand.slug + ".svg";
+        const loader = new THREE.SVGLoader();
+
+        loader.load(url, function(data) {
+            buildLogoFromData(data, brand.logo, width, height, thickness);
+            resolve();
+        }, undefined, function(error) {
+            statusEl.textContent = "Logo yüklenemedi. Plaka oluşturuldu.";
+            resolve();
+        });
+    });
 }
 
-
-/* =========================================================
-   SVG DATA → LOGO
-========================================================= */
-
-function buildLogoFromData(
-    data,
-    logoColor,
-    width,
-    height,
-    thickness
-) {
-
-
+function processSVGData(svgText, logoColor, width, height, thickness) {
     if (logoGroup) {
-
-        disposeGroup(
-            logoGroup
-        );
-
-        productGroup.remove(
-            logoGroup
-        );
-
+        disposeGroup(logoGroup);
+        productGroup.remove(logoGroup);
     }
+    logoGroup = new THREE.Group();
+    productGroup.add(logoGroup);
 
-
-    logoGroup =
-        new THREE.Group();
-
-
-    productGroup.add(
-        logoGroup
-    );
-
-
-    /* =====================================================
-       SVG PATHLERİ
-    ====================================================== */
-
-    for (
-        let i = 0;
-        i < data.paths.length;
-        i++
-    ) {
-
-
-        const path =
-            data.paths[i];
-
-
-        /* =============================================
-           FILL NONE KONTROLÜ
-        ============================================== */
-
-        const style =
-            path.userData &&
-            path.userData.style
-                ? path.userData.style
-                : null;
-
-
-        if (style) {
-
-
-            const fill =
-                (
-                    style.fill ||
-                    ""
-                ).toLowerCase();
-
-
-            if (
-                fill === "none" ||
-                fill === "transparent"
-            ) {
-
-                continue;
-
-            }
-
-        }
-
-
-        /*
-           KESİN KURAL:
-
-           path.toShapes(true)
-
-           KULLANILMIYOR.
-
-           createShapes kullanılıyor.
-        */
-
-        let shapes;
-
-
-        try {
-
-            shapes =
-                THREE.SVGLoader.createShapes(
-                    path
-                );
-
-        } catch (error) {
-
-            console.warn(
-                "SVG shape oluşturulamadı:",
-                error
-            );
-
-            continue;
-
-        }
-
-
-        for (
-            let j = 0;
-            j < shapes.length;
-            j++
-        ) {
-
-
-            const geometry =
-                new THREE.ExtrudeGeometry(
-                    shapes[j],
-                    {
-
-                        depth:
-                            1.2,
-
-                        steps:
-                            1,
-
-                        bevelEnabled:
-                            false,
-
-                        curveSegments:
-                            32
-
-                    }
-                );
-
-
-            const material =
-                new THREE.MeshStandardMaterial({
-
-                    color:
-                        logoColor,
-
-                    metalness:
-                        .15,
-
-                    roughness:
-                        .30,
-
-                    side:
-                        THREE.DoubleSide
-
-                });
-
-
-            const mesh =
-                new THREE.Mesh(
-                    geometry,
-                    material
-                );
-
-
-            logoGroup.add(
-                mesh
-            );
-
-        }
-
-    }
-
-
-    fitLogoToPlate(
-        width,
-        height,
-        thickness
-    );
-
-}
-
-
-/* =========================================================
-   SVG TEXT → PARSE → LOGO
-========================================================= */
-
-function buildLogoFromSVGText(
-    svgText,
-    logoColor,
-    width,
-    height,
-    thickness
-) {
-
-
-    if (logoGroup) {
-
-        disposeGroup(
-            logoGroup
-        );
-
-        productGroup.remove(
-            logoGroup
-        );
-
-    }
-
-
-    logoGroup =
-        new THREE.Group();
-
-
-    productGroup.add(
-        logoGroup
-    );
-
-
-    const loader =
-        new THREE.SVGLoader();
-
-
+    const loader = new THREE.SVGLoader();
     let data;
-
-
     try {
-
-        data =
-            loader.parse(
-                svgText
-            );
-
+        data = loader.parse(svgText);
     } catch (error) {
-
-        console.error(
-            error
-        );
-
-        statusEl.textContent =
-            "SVG okunamadı.";
-
+        statusEl.textContent = "SVG okunamadı.";
         return;
-
     }
+    buildLogoFromData(data, logoColor, width, height, thickness);
+}
 
-
-    /* =====================================================
-       PATHLER
-    ====================================================== */
-
-    for (
-        let i = 0;
-        i < data.paths.length;
-        i++
-    ) {
-
-
-        const path =
-            data.paths[i];
-
-
-        /* =============================================
-           NONE FILL
-        ============================================== */
-
-        const style =
-            path.userData &&
-            path.userData.style
-                ? path.userData.style
-                : null;
-
-
-        if (style) {
-
-            const fill =
-                (
-                    style.fill ||
-                    ""
-                ).toLowerCase();
-
-
-            if (
-                fill === "none" ||
-                fill === "transparent"
-            ) {
-
-                continue;
-
-            }
-
-        }
-
-
-        /*
-           KRİTİK:
-
-           createShapes(path)
-
-           kullanıyoruz.
-        */
-
+function buildLogoFromData(data, logoColor, width, height, thickness) {
+    for (let i = 0; i < data.paths.length; i++) {
+        const path = data.paths[i];
         let shapes;
-
-
         try {
-
-            shapes =
-                THREE.SVGLoader.createShapes(
-                    path
-                );
-
+            shapes = THREE.SVGLoader.createShapes(path);
         } catch (error) {
-
-            console.warn(
-                error
-            );
-
             continue;
-
         }
 
-
-        for (
-            let j = 0;
-            j < shapes.length;
-            j++
-        ) {
-
-
-            const geometry =
-                new THREE.ExtrudeGeometry(
-                    shapes[j],
-                    {
-
-                        depth:
-                            1.2,
-
-                        steps:
-                            1,
-
-                        bevelEnabled:
-                            false,
-
-                        curveSegments:
-                            32
-
-                    }
-                );
-
-
-            const material =
-                new THREE.MeshStandardMaterial({
-
-                    color:
-                        logoColor,
-
-                    metalness:
-                        .15,
-
-                    roughness:
-                        .30,
-
-                    side:
-                        THREE.DoubleSide
-
-                });
-
-
-            const mesh =
-                new THREE.Mesh(
-                    geometry,
-                    material
-                );
-
-
-            logoGroup.add(
-                mesh
-            );
-
+        for (let j = 0; j < shapes.length; j++) {
+            const geometry = new THREE.ExtrudeGeometry(shapes[j], {
+                depth: 1.2,
+                steps: 1,
+                bevelEnabled: false,
+                curveSegments: 32
+            });
+            const material = new THREE.MeshStandardMaterial({
+                color: logoColor,
+                metalness: .15,
+                roughness: .30,
+                side: THREE.DoubleSide
+            });
+            logoGroup.add(new THREE.Mesh(geometry, material));
         }
-
     }
-
-
-    /* =====================================================
-       LOGO FIT
-    ====================================================== */
-
-    fitLogoToPlate(
-        width,
-        height,
-        thickness
-    );
-
+    fitLogoToPlate(width, height, thickness);
 }
 
+function fitLogoToPlate(width, height, thickness) {
+    if (!logoGroup || logoGroup.children.length === 0) return;
 
-/* =========================================================
-   LOGO FIT ENGINE
+    logoGroup.scale.set(1, 1, 1);
+    logoGroup.rotation.set(0, 0, 0);
+    logoGroup.updateMatrixWorld(true);
 
-   BURASI ÖNCEKİ KODDAN EN ÖNEMLİ FARK.
+    let box = new THREE.Box3().setFromObject(logoGroup);
+    const size = new THREE.Vector3();
+    box.getSize(size);
 
-   SVG CANVAS'I DEĞİL,
-   GERÇEK GEOMETRİ ALANI ÖLÇÜLÜYOR.
-========================================================= */
+    if (size.x <= 0 || size.y <= 0) return;
 
-function fitLogoToPlate(
-    width,
-    height,
-    thickness
-) {
+    const maxWidth = Math.max(5, width - 12);
+    const maxHeight = Math.max(5, height - 12);
+    const scaleX = maxWidth / size.x;
+    const scaleY = maxHeight / size.y;
+    const scale = Math.min(scaleX, scaleY);
 
+    logoGroup.scale.set(scale, -scale, scale);
+    logoGroup.updateMatrixWorld(true);
 
-    if (!logoGroup) {
+    box = new THREE.Box3().setFromObject(logoGroup);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+
+    logoGroup.position.x = -center.x;
+    logoGroup.position.y = -center.y;
+    logoGroup.position.z = thickness;
+    logoGroup.updateMatrixWorld(true);
+
+    statusEl.textContent = "Özel SVG plaka üzerine yerleştirildi.";
+}
+
+svgFile.addEventListener("change", function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".svg")) {
+        alert("Lütfen geçerli bir SVG dosyası seçin.");
         return;
     }
-
-
-    if (
-        logoGroup.children.length === 0
-    ) {
-
-        return;
-
-    }
-
-
-    /*
-       Önce tüm scale değerlerini sıfırla.
-    */
-
-    logoGroup.scale.set(
-        1,
-        1,
-        1
-    );
-
-
-    /*
-       SVGLoader Y eksenini ters çevireceğiz.
-    */
-
-    logoGroup.rotation.set(
-        0,
-        0,
-        0
-    );
-
-
-    /*
-       Gerçek geometrik bounding box.
-    */
-
-    logoGroup.updateMatrixWorld(
-        true
-    );
-
-
-    let box =
-        new THREE.Box3()
-            .setFromObject(
-                logoGroup
-            );
-
-
-    const size =
-        new THREE.Vector3();
-
-
-    box.getSize(
-        size
-    );
-
-
-    /*
-       Eğer SVG'de geçersiz boyut varsa
-       işlem yapma.
-    */
-
-    if (
-        size.x <= 0 ||
-        size.y <= 0
-    ) {
-
-        return;
-
-    }
-
-
-    /* =====================================================
-       MAKSİMUM LOGO ALANI
-
-       Width - 12
-       Height - 12
-    ====================================================== */
-
-    const maxWidth =
-        Math.max(
-            5,
-            width - 12
-        );
-
-
-    const maxHeight =
-        Math.max(
-            5,
-            height - 12
-        );
-
-
-    /*
-       Her iki eksende sığdır.
-    */
-
-    const scaleX =
-        maxWidth /
-        size.x;
-
-
-    const scaleY =
-        maxHeight /
-        size.y;
-
-
-    const scale =
-        Math.min(
-            scaleX,
-            scaleY
-        );
-
-
-    /*
-       SVG koordinat sisteminin Y'sini
-       fiziksel 3D koordinat sistemine çevir.
-    */
-
-    logoGroup.scale.set(
-        scale,
-        -scale,
-        scale
-    );
-
-
-    /*
-       Scale sonrası tekrar hesapla.
-    */
-
-    logoGroup.updateMatrixWorld(
-        true
-    );
-
-
-    box =
-        new THREE.Box3()
-            .setFromObject(
-                logoGroup
-            );
-
-
-    const center =
-        new THREE.Vector3();
-
-
-    box.getCenter(
-        center
-    );
-
-
-    /*
-       LOGOYU TAM MERKEZE GETİR.
-    */
-
-    logoGroup.position.x =
-        -center.x;
-
-
-    logoGroup.position.y =
-        -center.y;
-
-
-    /*
-       KESİN Z POZİSYONU.
-
-       Logo geometrisi 0 → 1.2 mm
-       arasında extrude edilir.
-
-       Position Z = thickness.
-
-       Sonuç:
-
-       Plaka:
-       0 → thickness
-
-       Logo:
-       thickness → thickness + 1.2
-    */
-
-    logoGroup.position.z =
-        thickness;
-
-
-    /*
-       Son kontrol.
-    */
-
-    logoGroup.updateMatrixWorld(
-        true
-    );
-
-
-    statusEl.textContent =
-        "Logo plaka üzerine yerleştirildi.";
-
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        currentCustomSVGText = e.target.result;
+        customSVGActive = true;
+        svgStatus.classList.add("active");
+        svgStatus.textContent = "Özel SVG aktif — yuvarlatılmış plaka kullanılıyor.";
+        createModel();
+    };
+    reader.readAsText(file);
+});
+
+function updateInterface(brand, width, height, thickness) {
+    brandNameEl.textContent = brand.name;
+    colorPreview.style.background = brand.base;
+    dimensionText.textContent = width + " × " + height + " mm";
+    thicknessText.textContent = thickness + " mm";
 }
-
-
-/* =========================================================
-   CUSTOM SVG CLEANER
-========================================================= */
-
-function cleanSVGFile(
-    svgText
-) {
-
-
-    const parser =
-        new DOMParser();
-
-
-    const doc =
-        parser.parseFromString(
-            svgText,
-            "image/svg+xml"
-        );
-
-
-    /* =====================================================
-       HATALI SVG
-    ====================================================== */
-
-    const parserError =
-        doc.querySelector(
-            "parsererror"
-        );
-
-
-    if (parserError) {
-
-        throw new Error(
-            "SVG parse edilemedi."
-        );
-
-    }
-
-
-    /* =====================================================
-       METİN / IMAGE / ARKA PLAN TEMİZLEME
-    ====================================================== */
-
-    const elements =
-        doc.querySelectorAll(
-            "*"
-        );
-
-
-    for (
-        let i = elements.length - 1;
-        i >= 0;
-        i--
-    ) {
-
-
-        const el =
-            elements[i];
-
-
-        const tag =
-            el.tagName
-                ? el.tagName.toLowerCase()
-                : "";
-
-
-        /* =============================================
-           TEXT
-
-           Logoda gerçekten text kullanılıyorsa
-           bunu kapatmak isteyebiliriz.
-
-           Şimdilik text elementlerini kaldırıyoruz.
-        ============================================== */
-
-        if (
-            tag === "text"
-        ) {
-
-            el.remove();
-
-            continue;
-
-        }
-
-
-        /* =============================================
-           IMAGE
-
-           SVG içine gömülmüş bitmap
-        ============================================== */
-
-        if (
-            tag === "image"
-        ) {
-
-            el.remove();
-
-            continue;
-
-        }
-
-
-        const fill =
-            (
-                el.getAttribute(
-                    "fill"
-                ) ||
-                ""
-            )
-            .trim()
-            .toLowerCase();
-
-
-        const style =
-            (
-                el.getAttribute(
-                    "style"
-                ) ||
-                ""
-            )
-            .toLowerCase()
-            .replace(
-                /\s/g,
-                ""
-            );
-
-
-        /* =============================================
-           FILL NONE
-        ============================================== */
-
-        if (
-            fill === "none" ||
-            fill === "transparent" ||
-            style.includes(
-                "fill:none"
-            )
-        ) {
-
-            el.remove();
-
-            continue;
-
-        }
-
-
-        /* =============================================
-           OPACITY 0
-        ============================================== */
-
-        const opacity =
-            parseFloat(
-                el.getAttribute(
-                    "opacity"
-                )
-            );
-
-
-        if (
-            !isNaN(opacity) &&
-            opacity <= 0
-        ) {
-
-            el.remove();
-
-            continue;
-
-        }
-
-
-        /* =============================================
-           WHITE RECT BACKGROUND
-        ============================================== */
-
-        if (
-            tag === "rect"
-        ) {
-
-
-            const isWhite =
-                fill === "#fff" ||
-                fill === "#ffffff" ||
-                fill === "white" ||
-                fill === "rgb(255,255,255)" ||
-                fill === "rgb(255, 255, 255)" ||
-                style.includes(
-                    "fill:#fff"
-                ) ||
-                style.includes(
-                    "fill:#ffffff"
-                );
-
-
-            if (isWhite) {
-
-
-                const svg =
-                    doc.documentElement;
-
-
-                const viewBox =
-                    (
-                        svg.getAttribute(
-                            "viewBox"
-                        ) ||
-                        ""
-                    )
-                    .trim()
-                    .split(
-                        /[\s,]+/
-                    )
-                    .map(Number);
-
-
-                const rectWidth =
-                    parseFloat(
-                        el.getAttribute(
-                            "width"
-                        )
-                    ) || 0;
-
-
-                const rectHeight =
-                    parseFloat(
-                        el.getAttribute(
-                            "height"
-                        )
-                    ) || 0;
-
-
-                /*
-                   SVG canvas'ının en az %90'ını
-                   kaplayan beyaz rect ise
-                   ARKA PLAN kabul edilir.
-                */
-
-                if (
-                    viewBox.length === 4 &&
-                    rectWidth >=
-                        Math.abs(
-                            viewBox[2]
-                        ) * .90 &&
-                    rectHeight >=
-                        Math.abs(
-                            viewBox[3]
-                        ) * .90
-                ) {
-
-                    el.remove();
-
-                    continue;
-
-                }
-
-            }
-
-        }
-
-    }
-
-
-    return new XMLSerializer()
-        .serializeToString(
-            doc.documentElement
-        );
-
-}
-
-
-/* =========================================================
-   CUSTOM SVG EVENT
-========================================================= */
-
-svgFile.addEventListener(
-    "change",
-    function(event) {
-
-
-        const file =
-            event.target.files[0];
-
-
-        if (!file) {
-            return;
-        }
-
-
-        if (
-            !file.name
-                .toLowerCase()
-                .endsWith(
-                    ".svg"
-                )
-        ) {
-
-
-            alert(
-                "Lütfen SVG dosyası seçin."
-            );
-
-
-            return;
-
-        }
-
-
-        const reader =
-            new FileReader();
-
-
-        reader.onload =
-            function(e) {
-
-
-                try {
-
-
-                    const cleaned =
-                        cleanSVGFile(
-                            e.target.result
-                        );
-
-
-                    window.currentCustomSVG =
-                        cleaned;
-
-
-                    customSVGActive =
-                        true;
-
-
-                    svgStatus.classList.add(
-                        "active"
-                    );
-
-
-                    svgStatus.textContent =
-                        "Özel SVG aktif — yuvarlatılmış plaka kullanılacak.";
-
-
-                    createModel();
-
-
-                } catch (error) {
-
-
-                    console.error(
-                        error
-                    );
-
-
-                    alert(
-                        "SVG dosyası işlenemedi."
-                    );
-
-                }
-
-            };
-
-
-        reader.readAsText(
-            file
-        );
-
-    }
-);
-
-
-/* =========================================================
-   INTERFACE
-========================================================= */
-
-function updateInterface(
-    brand,
-    width,
-    height,
-    thickness
-) {
-
-
-    brandNameEl.textContent =
-        brand.name;
-
-
-    colorPreview.style.background =
-        brand.base;
-
-
-    dimensionText.textContent =
-        width +
-        " × " +
-        height +
-        " mm";
-
-
-    thicknessText.textContent =
-        thickness +
-        " mm";
-
-}
-
-
-/* =========================================================
-   X / Y CENTER ONLY
-
-   Z'YE DOKUNMUYORUZ.
-========================================================= */
 
 function centerProductXY() {
+    if (!productGroup) return;
+    productGroup.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(productGroup);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    productGroup.position.x = -center.x;
+    productGroup.position.y = -center.y;
+    productGroup.position.z = 0;
+}
 
+brandSelect.addEventListener("change", function() {
+    customSVGActive = false;
+    currentCustomSVGText = null;
+    svgFile.value = "";
+    svgStatus.classList.remove("active");
+    svgStatus.textContent = "Özel SVG seçilmedi. Standart marka plakası kullanılıyor.";
+    createModel();
+});
 
+[widthInput, heightInput, thicknessInput, holeInput].forEach(function(input) {
+    input.addEventListener("input", function() { createModel(); });
+});
+
+document.getElementById("resetBtn").addEventListener("click", function() {
+    brandSelect.value = "tesla";
+    widthInput.value = 70;
+    heightInput.value = 45;
+    thicknessInput.value = 3;
+    holeInput.value = 5;
+    svgFile.value = "";
+    customSVGActive = false;
+    currentCustomSVGText = null;
+    svgStatus.classList.remove("active");
+    svgStatus.textContent = "Özel SVG seçilmedi. Standart marka plakası kullanılıyor.";
+    createModel();
+});
+
+document.getElementById("downloadBtn").addEventListener("click", function() {
     if (!productGroup) {
+        alert("Önce model oluşturun.");
         return;
     }
+    statusEl.textContent = "STL hazırlanıyor...";
+    const exporter = new THREE.STLExporter();
+    productGroup.updateMatrixWorld(true);
+    const result = exporter.parse(productGroup, { binary: true });
+    const blob = new Blob([result], { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const brand = BRANDS[brandSelect.value];
+    const width = widthInput.value;
+    const height = heightInput.value;
+    const thickness = thicknessInput.value;
+    const customName = customSVGActive ? "ozel-svg" : brand.slug;
 
+    a.href = url;
+    a.download = "anahtarlik_" + customName + "_" + width + "x" + height + "x" + thickness + "mm.stl";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 
-    productGroup.updateMatrixWorld(
-        true
-    );
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    statusEl.textContent = "STL başarıyla oluşturuldu.";
+});
 
-
-    const box =
-        new THREE.Box3()
-            .setFromObject(
-                productGroup
-            );
-
-
-    const center =
-        new THREE.Vector3();
-
-
-    box.getCenter(
-        center
-    );
-
-
-    productGroup.position.x =
-        -center.x;
-
-
-    productGroup.position.y =
-        -center.y;
-
-
-    /*
-       KRİTİK:
-
-       productGroup.position.z
-       DEĞİŞTİRİLMİYOR.
-    */
-
-    productGroup.position.z =
-        0;
-
+function disposeGroup(group) {
+    if (!group) return;
+    group.traverse(function(object) {
+        if (object.geometry) object.geometry.dispose();
+        if (object.material) {
+            if (Array.isArray(object.material)) {
+                object.material.forEach(function(material) { material.dispose(); });
+            } else {
+                object.material.dispose();
+            }
+        }
+    });
 }
 
-
-/* =========================================================
-   BRAND CHANGE
-========================================================= */
-
-brandSelect.addEventListener(
-    "change",
-    function() {
-
-
-        /*
-           Marka değiştirildiğinde
-           özel SVG modu kapatılır.
-        */
-
-        customSVGActive =
-            false;
-
-
-        window.currentCustomSVG =
-            null;
-
-
-        svgFile.value =
-            "";
-
-
-        svgStatus.classList.remove(
-            "active"
-        );
-
-
-        svgStatus.textContent =
-            "Özel SVG seçilmedi. Standart marka plakası kullanılıyor.";
-
-
-        createModel();
-
-    }
-);
-
-
-/* =========================================================
-   PARAMETERS
-========================================================= */
-
-[
-    widthInput,
-    heightInput,
-    thicknessInput,
-    holeInput
-]
-.forEach(
-    function(input) {
-
-
-        input.addEventListener(
-            "input",
-            function() {
-
-                createModel();
-
-            }
-        );
-
-    }
-);
-
-
-/* =========================================================
-   RESET
-========================================================= */
-
-document.getElementById(
-    "resetBtn"
-)
-.addEventListener(
-    "click",
-    function() {
-
-
-        brandSelect.value =
-            "tesla";
-
-
-        widthInput.value =
-            70;
-
-
-        heightInput.value =
-            45;
-
-
-        thicknessInput.value =
-            3;
-
-
-        holeInput.value =
-            5;
-
-
-        svgFile.value =
-            "";
-
-
-        customSVGActive =
-            false;
-
-
-        window.currentCustomSVG =
-            null;
-
-
-        svgStatus.classList.remove(
-            "active"
-        );
-
-
-        svgStatus.textContent =
-            "Özel SVG seçilmedi. Standart marka plakası kullanılıyor.";
-
-
-        createModel();
-
-    }
-);
-
-
-/* =========================================================
-   STL EXPORT
-========================================================= */
-
-document.getElementById(
-    "downloadBtn"
-)
-.addEventListener(
-    "click",
-    function() {
-
-
-        if (!productGroup) {
-
-            alert(
-                "Önce model oluşturun."
-            );
-
-            return;
-
-        }
-
-
-        statusEl.textContent =
-            "STL hazırlanıyor...";
-
-
-        /*
-           STLExporter
-        */
-
-        const exporter =
-            new THREE.STLExporter();
-
-
-        /*
-           Dünya koordinatlarını güncelle.
-        */
-
-        productGroup.updateMatrixWorld(
-            true
-        );
-
-
-        const result =
-            exporter.parse(
-                productGroup,
-                {
-                    binary: true
-                }
-            );
-
-
-        const blob =
-            new Blob(
-                [result],
-                {
-                    type:
-                        "application/octet-stream"
-                }
-            );
-
-
-        const url =
-            URL.createObjectURL(
-                blob
-            );
-
-
-        const a =
-            document.createElement(
-                "a"
-            );
-
-
-        const brand =
-            BRANDS[
-                brandSelect.value
-            ];
-
-
-        const width =
-            widthInput.value;
-
-
-        const height =
-            heightInput.value;
-
-
-        const thickness =
-            thicknessInput.value;
-
-
-        const customName =
-            customSVGActive
-                ? "ozel-svg"
-                : brand.slug;
-
-
-        a.href =
-            url;
-
-
-        a.download =
-            "anahtarlik_" +
-            customName +
-            "_" +
-            width +
-            "x" +
-            height +
-            "x" +
-            thickness +
-            "mm.stl";
-
-
-        document.body.appendChild(
-            a
-        );
-
-
-        a.click();
-
-
-        document.body.removeChild(
-            a
-        );
-
-
-        setTimeout(
-            function() {
-
-                URL.revokeObjectURL(
-                    url
-                );
-
-            },
-            1000
-        );
-
-
-        statusEl.textContent =
-            "STL başarıyla oluşturuldu.";
-
-    }
-);
-
-
-/* =========================================================
-   DISPOSE
-========================================================= */
-
-function disposeGroup(
-    group
-) {
-
-
-    if (!group) {
-        return;
-    }
-
-
-    group.traverse(
-        function(object) {
-
-
-            if (
-                object.geometry
-            ) {
-
-                object.geometry.dispose();
-
-            }
-
-
-            if (
-                object.material
-            ) {
-
-
-                if (
-                    Array.isArray(
-                        object.material
-                    )
-                ) {
-
-
-                    object.material.forEach(
-                        function(material) {
-
-                            material.dispose();
-
-                        }
-                    );
-
-
-                } else {
-
-                    object.material.dispose();
-
-                }
-
-            }
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   RESIZE
-========================================================= */
-
-window.addEventListener(
-    "resize",
-    function() {
-
-
-        if (!renderer) {
-            return;
-        }
-
-
-        const width =
-            container.clientWidth;
-
-
-        const height =
-            container.clientHeight;
-
-
-        camera.aspect =
-            width /
-            height;
-
-
-        camera.updateProjectionMatrix();
-
-
-        renderer.setSize(
-            width,
-            height
-        );
-
-    }
-);
-
-
-/* =========================================================
-   ANIMATION
-========================================================= */
+window.addEventListener("resize", function() {
+    if (!renderer) return;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height);
+});
 
 function animate() {
-
-
-    requestAnimationFrame(
-        animate
-    );
-
-
+    requestAnimationFrame(animate);
     controls.update();
-
-
-    renderer.render(
-        scene,
-        camera
-    );
-
+    renderer.render(scene, camera);
 }
 
-
-/* =========================================================
-   START
-========================================================= */
-
 init();
-
 </script>
-
 </body>
 </html>
