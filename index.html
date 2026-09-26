@@ -367,7 +367,7 @@ async function createModel() {
         bevelSegments: 3,
         bevelSize: .5,
         bevelThickness: .35,
-        curveSegments: 48
+        curveSegments: 32
     });
 
     plateGeometry.computeBoundingBox();
@@ -404,7 +404,7 @@ async function createModel() {
         bevelSegments: 3,
         bevelSize: .35,
         bevelThickness: .25,
-        curveSegments: 48
+        curveSegments: 32
     });
 
     const ringMaterial = new THREE.MeshStandardMaterial({
@@ -486,7 +486,7 @@ function buildLogoFromData(data, logoColor, width, height, thickness) {
                 depth: 1.2,
                 steps: 1,
                 bevelEnabled: false,
-                curveSegments: 32
+                curveSegments: 16
             });
             const material = new THREE.MeshStandardMaterial({
                 color: logoColor,
