@@ -160,7 +160,7 @@ select:focus, input[type="number"]:focus { border-color: #777; }
                 <input id="svgFile" type="file" accept=".svg,image/svg+xml">
                 <div id="svgStatus" class="svg-status">Özel SVG seçilmedi. Standart marka plakası kullanılıyor.</div>
                 <div class="info">
-                    Özel SVG yüklendiğinde otomatik olarak arka plan, gizli öğeler ve konturlar temizlenir; kalan şekiller plaka üzerine ortalanır.
+                    Özel SVG yüklendiğinde otomatik olarak plaka üzerine ortalanır ve konumlandırılır.
                 </div>
             </div>
 
@@ -338,87 +338,6 @@ function createPlateShape(type, width, height) {
     return roundedRectShape(width, height, Math.min(width, height) * .16);
 }
 
-function sanitizeSVG(svgText) {
-    const report = { removedDefs: 0, removedHidden: 0, removedBackground: 0, removedFillNone: 0, error: null };
-    try {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(svgText, "image/svg+xml");
-        if (doc.querySelector("parsererror")) {
-            report.error = "SVG dosyası okunamadı (geçersiz XML).";
-            return { svgText, report };
-        }
-        const svgEl = doc.documentElement;
-
-        ["defs", "clipPath", "mask", "style", "metadata", "title", "desc"].forEach(function(tag) {
-            const nodes = doc.querySelectorAll(tag);
-            report.removedDefs += nodes.length;
-            nodes.forEach(function(el) { el.remove(); });
-        });
-
-        doc.querySelectorAll("*").forEach(function(el) {
-            const style = el.getAttribute("style") || "";
-            const display = el.getAttribute("display");
-            const visibility = el.getAttribute("visibility");
-            const opacity = el.getAttribute("opacity");
-            const hidden =
-                display === "none" || visibility === "hidden" || opacity === "0" ||
-                /display:\s*none/i.test(style) ||
-                /visibility:\s*hidden/i.test(style) ||
-                /opacity:\s*0(\.0*)?(\D|$)/i.test(style);
-            if (hidden) {
-                report.removedHidden++;
-                el.remove();
-            }
-        });
-
-        let canvasW = 0, canvasH = 0;
-        const vb = svgEl.getAttribute("viewBox");
-        if (vb) {
-            const parts = vb.trim().split(/[\s,]+/).map(Number);
-            if (parts.length === 4) { canvasW = parts[2]; canvasH = parts[3]; }
-        }
-        if (!canvasW || !canvasH) {
-            canvasW = parseFloat(svgEl.getAttribute("width")) || 0;
-            canvasH = parseFloat(svgEl.getAttribute("height")) || 0;
-        }
-        if (canvasW && canvasH) {
-            doc.querySelectorAll("rect").forEach(function(el) {
-                const w = parseFloat(el.getAttribute("width")) || 0;
-                const h = parseFloat(el.getAttribute("height")) || 0;
-                const x = parseFloat(el.getAttribute("x")) || 0;
-                const y = parseFloat(el.getAttribute("y")) || 0;
-                const fill = (el.getAttribute("fill") || "").trim().toLowerCase();
-                const style = (el.getAttribute("style") || "").toLowerCase();
-                const fillMatch = style.match(/fill:\s*([^;]+)/);
-                const effectiveFill = fillMatch ? fillMatch[1].trim() : fill;
-                const isLightOrUnset = effectiveFill === "" || ["#fff", "#ffffff", "white"].includes(effectiveFill);
-                const coversCanvas =
-                    w >= canvasW * 0.9 && h >= canvasH * 0.9 &&
-                    x <= canvasW * 0.05 && y <= canvasH * 0.05;
-                if (coversCanvas && isLightOrUnset) {
-                    report.removedBackground++;
-                    el.remove();
-                }
-            });
-        }
-
-        doc.querySelectorAll("path, polygon, polyline, circle, ellipse, rect").forEach(function(el) {
-            const fill = (el.getAttribute("fill") || "").trim().toLowerCase();
-            const style = (el.getAttribute("style") || "").toLowerCase();
-            const styleFillNone = /fill:\s*none/.test(style);
-            if (fill === "none" || styleFillNone) {
-                report.removedFillNone++;
-                el.remove();
-            }
-        });
-
-        return { svgText: new XMLSerializer().serializeToString(doc), report };
-    } catch (e) {
-        report.error = "SVG temizlenirken hata oluştu.";
-        return { svgText, report };
-    }
-}
-
 async function createModel() {
     if (productGroup) {
         disposeGroup(productGroup);
@@ -498,7 +417,7 @@ async function createModel() {
     productGroup.add(ringMesh);
 
     if (customSVGActive && currentCustomSVGText) {
-        processSVGData(currentCustomSVGText, "#111111", width, height, thickness); // Özel SVG için koyu kontrast renk (#111111)
+        processSVGData(currentCustomSVGText, "#111111", width, height, thickness);
     } else {
         await loadBrandLogo(brand, width, height, thickness);
     }
@@ -541,25 +460,19 @@ function processSVGData(svgText, logoColor, width, height, thickness) {
     logoGroup = new THREE.Group();
     productGroup.add(logoGroup);
 
-    const cleaned = sanitizeSVG(svgText);
-    if (cleaned.report.error) {
-        statusEl.textContent = cleaned.report.error;
-        return;
-    }
-
     const loader = new THREE.SVGLoader();
     let data;
     try {
-        data = loader.parse(cleaned.svgText);
+        data = loader.parse(svgText);
     } catch (error) {
         statusEl.textContent = "SVG okunamadı.";
         return;
     }
 
-    buildLogoFromData(data, logoColor, width, height, thickness, cleaned.report);
+    buildLogoFromData(data, logoColor, width, height, thickness);
 }
 
-function buildLogoFromData(data, logoColor, width, height, thickness, cleanReport) {
+function buildLogoFromData(data, logoColor, width, height, thickness) {
     let shapeCount = 0;
     for (let i = 0; i < data.paths.length; i++) {
         const path = data.paths[i];
@@ -595,11 +508,9 @@ function buildLogoFromData(data, logoColor, width, height, thickness, cleanRepor
 
     fitLogoToPlate(width, height, thickness);
 
-    if (cleanReport) {
-        svgStatus.classList.remove("warn");
-        svgStatus.classList.add("active");
-        svgStatus.textContent = "Özel SVG aktif — " + shapeCount + " parça plaka üzerine yerleştirildi.";
-    }
+    svgStatus.classList.remove("warn");
+    svgStatus.classList.add("active");
+    svgStatus.textContent = "Özel SVG aktif — " + shapeCount + " parça plaka üzerine yerleştirildi.";
 }
 
 function fitLogoToPlate(width, height, thickness) {
@@ -740,7 +651,7 @@ function disposeGroup(group) {
             }
         }
     });
-});
+}
 
 window.addEventListener("resize", function() {
     if (!renderer) return;
