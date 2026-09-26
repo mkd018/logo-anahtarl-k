@@ -160,15 +160,7 @@ select:focus, input[type="number"]:focus { border-color: #777; }
                 <input id="svgFile" type="file" accept=".svg,image/svg+xml">
                 <div id="svgStatus" class="svg-status">Özel SVG seçilmedi. Standart marka plakası kullanılıyor.</div>
                 <div class="info">
-                    ℹ️ Hazır marka logoları internetten (jsDelivr CDN) çekilir. Claude'un artifact görüntüleyicisi bu tür dış istekleri engelleyebilir; böyle bir durumda plaka boş gelir ama boyutlar/delik doğru üretilir. Dosyayı indirip kendi tarayıcınızda açtığınızda logolar normal yüklenir. En garantili yöntem: kendi SVG'nizi aşağıdan yükleyin.
-                </div>
-                <div class="info">
-                    Özel SVG yüklendiğinde otomatik olarak:<br>
-                    • Tüm sayfayı kaplayan beyaz arka plan dikdörtgenleri<br>
-                    • fill="none" (sadece çizgi/kontur) katmanlar<br>
-                    • defs / clipPath / mask içindeki gizli öğeler<br>
-                    • display:none / visibility:hidden / opacity:0 öğeler<br>
-                    temizlenir; kalan şekiller plaka üzerine ortalanır.
+                    Özel SVG yüklendiğinde otomatik olarak arka plan, gizli öğeler ve konturlar temizlenir; kalan şekiller plaka üzerine ortalanır.
                 </div>
             </div>
 
@@ -346,36 +338,23 @@ function createPlateShape(type, width, height) {
     return roundedRectShape(width, height, Math.min(width, height) * .16);
 }
 
-/**
- * Cleans a raw uploaded SVG string so only the actual "ink" of the logo
- * survives before it goes into THREE.SVGLoader:
- *  - strips <defs>/<clipPath>/<mask>/<style>/<metadata> (never meant to render directly,
- *    but SVGLoader walks the whole DOM and would extrude them anyway)
- *  - strips explicitly hidden nodes (display:none, visibility:hidden, opacity:0)
- *  - strips full-canvas background rectangles (typically white, added by export tools)
- *  - strips fill="none" shapes (outline/stroke-only art with nothing to extrude as a solid)
- * Returns { svgText, removed } so the caller can report what happened.
- */
 function sanitizeSVG(svgText) {
     const report = { removedDefs: 0, removedHidden: 0, removedBackground: 0, removedFillNone: 0, error: null };
     try {
         const parser = new DOMParser();
         const doc = parser.parseFromString(svgText, "image/svg+xml");
-        const parseError = doc.querySelector("parsererror");
-        if (parseError) {
+        if (doc.querySelector("parsererror")) {
             report.error = "SVG dosyası okunamadı (geçersiz XML).";
             return { svgText, report };
         }
         const svgEl = doc.documentElement;
 
-        // 1) Elements that are never meant to render directly.
         ["defs", "clipPath", "mask", "style", "metadata", "title", "desc"].forEach(function(tag) {
             const nodes = doc.querySelectorAll(tag);
             report.removedDefs += nodes.length;
             nodes.forEach(function(el) { el.remove(); });
         });
 
-        // 2) Explicitly hidden nodes.
         doc.querySelectorAll("*").forEach(function(el) {
             const style = el.getAttribute("style") || "";
             const display = el.getAttribute("display");
@@ -392,7 +371,6 @@ function sanitizeSVG(svgText) {
             }
         });
 
-        // 3) Full-canvas background rectangles (usually white, added by export tools).
         let canvasW = 0, canvasH = 0;
         const vb = svgEl.getAttribute("viewBox");
         if (vb) {
@@ -424,7 +402,6 @@ function sanitizeSVG(svgText) {
             });
         }
 
-        // 4) fill="none" shapes: outline/stroke-only art, nothing solid to extrude.
         doc.querySelectorAll("path, polygon, polyline, circle, ellipse, rect").forEach(function(el) {
             const fill = (el.getAttribute("fill") || "").trim().toLowerCase();
             const style = (el.getAttribute("style") || "").toLowerCase();
@@ -437,7 +414,7 @@ function sanitizeSVG(svgText) {
 
         return { svgText: new XMLSerializer().serializeToString(doc), report };
     } catch (e) {
-        report.error = "SVG temizlenirken hata oluştu, orijinal dosya kullanılacak.";
+        report.error = "SVG temizlenirken hata oluştu.";
         return { svgText, report };
     }
 }
@@ -521,7 +498,7 @@ async function createModel() {
     productGroup.add(ringMesh);
 
     if (customSVGActive && currentCustomSVGText) {
-        processSVGData(currentCustomSVGText, brand.logo, width, height, thickness);
+        processSVGData(currentCustomSVGText, "#111111", width, height, thickness); // Özel SVG için koyu kontrast renk (#111111)
     } else {
         await loadBrandLogo(brand, width, height, thickness);
     }
@@ -550,11 +527,7 @@ function loadBrandLogo(brand, width, height, thickness) {
             buildLogoFromData(data, brand.logo, width, height, thickness);
             resolve();
         }, undefined, function(error) {
-            statusEl.textContent =
-                "Plaka hazır, ancak " + brand.name + " logosu yüklenemedi. " +
-                "Bu genelde Claude'un artifact görüntüleyicisinin dış ağ isteklerini engellemesinden kaynaklanır " +
-                "(bu HTML dosyasını indirip kendi tarayıcınızda veya kendi sitenizde açarsanız CDN'den normal şekilde yüklenir). " +
-                "Garanti bir sonuç için 'Özel SVG' alanından kendi logo dosyanızı yükleyebilirsiniz.";
+            statusEl.textContent = "Logo yüklenemedi.";
             resolve();
         });
     });
@@ -569,7 +542,6 @@ function processSVGData(svgText, logoColor, width, height, thickness) {
     productGroup.add(logoGroup);
 
     const cleaned = sanitizeSVG(svgText);
-
     if (cleaned.report.error) {
         statusEl.textContent = cleaned.report.error;
         return;
@@ -580,7 +552,7 @@ function processSVGData(svgText, logoColor, width, height, thickness) {
     try {
         data = loader.parse(cleaned.svgText);
     } catch (error) {
-        statusEl.textContent = "SVG okunamadı. Dosyanın geçerli bir SVG olduğundan emin olun.";
+        statusEl.textContent = "SVG okunamadı.";
         return;
     }
 
@@ -617,27 +589,16 @@ function buildLogoFromData(data, logoColor, width, height, thickness, cleanRepor
     }
 
     if (shapeCount === 0) {
-        statusEl.textContent = "Uyarı: SVG içinde dolgulu (fill) bir şekil bulunamadı, logo eklenemedi.";
-        if (cleanReport) {
-            svgStatus.classList.add("warn");
-            svgStatus.textContent = "Şekil bulunamadı. SVG muhtemelen sadece kontur (stroke) içeriyor — dolgulu bir versiyon deneyin.";
-        }
+        statusEl.textContent = "Uyarı: SVG içinde şekil bulunamadı.";
         return;
     }
 
     fitLogoToPlate(width, height, thickness);
 
     if (cleanReport) {
-        const cleanedAny = cleanReport.removedDefs || cleanReport.removedHidden || cleanReport.removedBackground || cleanReport.removedFillNone;
         svgStatus.classList.remove("warn");
         svgStatus.classList.add("active");
-        if (cleanedAny) {
-            svgStatus.textContent = "Özel SVG aktif — " + shapeCount + " şekil bulundu. Temizlenen: arka plan " +
-                cleanReport.removedBackground + ", gizli/defs " + cleanReport.removedDefs + cleanReport.removedHidden +
-                ", konturlu(fill:none) " + cleanReport.removedFillNone + ".";
-        } else {
-            svgStatus.textContent = "Özel SVG aktif — " + shapeCount + " şekil plaka üzerine yerleştirildi.";
-        }
+        svgStatus.textContent = "Özel SVG aktif — " + shapeCount + " parça plaka üzerine yerleştirildi.";
     }
 }
 
@@ -690,9 +651,6 @@ svgFile.addEventListener("change", function(event) {
         svgStatus.classList.add("active");
         svgStatus.textContent = "Özel SVG işleniyor...";
         createModel();
-    };
-    reader.onerror = function() {
-        alert("Dosya okunamadı, lütfen tekrar deneyin.");
     };
     reader.readAsText(file);
 });
@@ -782,7 +740,7 @@ function disposeGroup(group) {
             }
         }
     });
-}
+});
 
 window.addEventListener("resize", function() {
     if (!renderer) return;
