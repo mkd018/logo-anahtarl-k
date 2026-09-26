@@ -159,7 +159,7 @@ select:focus, input[type="number"]:focus { border-color: #777; }
                 <input id="svgFile" type="file" accept=".svg,image/svg+xml">
                 <div id="svgStatus" class="svg-status">Özel SVG seçilmedi. Standart marka plakası kullanılıyor.</div>
                 <div class="info">
-                    Yüklenen özel SVG doğrudan işlenir ve plaka üzerine (Z ekseninde doğru yüksekliğe) oturtulur.
+                    Yüklenen özel SVG doğrudan işlenir, bozuk yollar filtrelenir ve plaka üzerine oturtulur.
                 </div>
             </div>
 
@@ -415,9 +415,8 @@ function createModel() {
     ringMesh.position.set(0, bossY, 0);
     productGroup.add(ringMesh);
 
-    // Logonun plakanın neresine yerleşeceğini (Z ekseninde) netleştiriyoruz.
     const logoZPosition = thickness; 
-    const logoColor = customSVGActive ? "#111111" : brand.logo; // Özel SVG'ler her zaman siyah
+    const logoColor = customSVGActive ? "#111111" : brand.logo; 
 
     if (customSVGActive && currentCustomSVGText) {
         processSVGData(currentCustomSVGText, logoColor, width, height, logoZPosition);
@@ -425,11 +424,9 @@ function createModel() {
         loadBrandLogo(brand, logoColor, width, height, logoZPosition);
     }
 
-    // Ürün plakasını X/Y ekseninde ortalarken Z eksenini 0 noktasında sabit tutarız.
     centerProductXY();
     controls.target.set(0, 0, thickness / 2);
     controls.update();
-    statusEl.textContent = "Hazır — modeli döndürerek inceleyebilirsin.";
 }
 
 function loadBrandLogo(brand, logoColor, width, height, zPosition) {
@@ -482,25 +479,38 @@ function buildLogoFromData(data, logoColor, width, height, zPosition) {
         }
 
         for (let j = 0; j < shapes.length; j++) {
-            const geometry = new THREE.ExtrudeGeometry(shapes[j], {
-                depth: 1.2, // Logonun kalınlığı (1.2mm çıkıntı)
-                steps: 1,
-                bevelEnabled: false,
-                curveSegments: 16
-            });
-            const material = new THREE.MeshStandardMaterial({
-                color: logoColor,
-                metalness: .15,
-                roughness: .30,
-                side: THREE.DoubleSide
-            });
-            logoGroup.add(new THREE.Mesh(geometry, material));
-            shapeCount++;
+            try {
+                const geometry = new THREE.ExtrudeGeometry(shapes[j], {
+                    depth: 1.2, 
+                    steps: 1,
+                    bevelEnabled: false,
+                    curveSegments: 16
+                });
+                
+                // KRİTİK FİLTRE: Hatalı (NaN) üreten şekilleri kontrol et ve ayıkla!
+                geometry.computeBoundingBox();
+                const bbox = geometry.boundingBox;
+                if (!bbox || !isFinite(bbox.min.x) || !isFinite(bbox.max.x)) {
+                    geometry.dispose();
+                    continue; // Bozuk ve gruba zarar verecek geometrileri dahil etme
+                }
+
+                const material = new THREE.MeshStandardMaterial({
+                    color: logoColor,
+                    metalness: .15,
+                    roughness: .30,
+                    side: THREE.DoubleSide
+                });
+                logoGroup.add(new THREE.Mesh(geometry, material));
+                shapeCount++;
+            } catch(e) {
+                // Şekil hatalıysa yoksay ve çökmeyi önle
+            }
         }
     }
 
     if (shapeCount === 0) {
-        statusEl.textContent = "Uyarı: SVG içinde şekil bulunamadı.";
+        statusEl.textContent = "Uyarı: SVG içinde dolgulu ve geçerli şekil bulunamadı.";
         return;
     }
 
@@ -509,47 +519,50 @@ function buildLogoFromData(data, logoColor, width, height, zPosition) {
     if (customSVGActive) {
         svgStatus.classList.remove("warn");
         svgStatus.classList.add("active");
-        svgStatus.textContent = "Özel SVG aktif — " + shapeCount + " parça plaka üzerine yerleştirildi.";
+        svgStatus.textContent = "Özel SVG aktif — " + shapeCount + " parça başarıyla yerleştirildi.";
     }
 }
 
 function fitLogoToPlate(width, height, zPosition) {
     if (!logoGroup || logoGroup.children.length === 0) return;
 
-    // Önce logoyu normalize et (orijinal boyutuna getir)
     logoGroup.scale.set(1, 1, 1);
     logoGroup.rotation.set(0, 0, 0);
     logoGroup.position.set(0, 0, 0);
     logoGroup.updateMatrixWorld(true);
 
-    let box = new THREE.Box3().setFromObject(logoGroup);
+    const box = new THREE.Box3().setFromObject(logoGroup);
+    if (box.isEmpty()) return;
+
     const size = new THREE.Vector3();
     box.getSize(size);
 
-    if (size.x <= 0 || size.y <= 0) return;
+    if (!isFinite(size.x) || size.x <= 0 || !isFinite(size.y) || size.y <= 0) return;
 
-    // Plaka üzerine sığdırma oranını hesapla (Kenarlardan 6mm boşluk bırakarak)
     const maxWidth = Math.max(5, width - 12);
     const maxHeight = Math.max(5, height - 12);
     const scaleX = maxWidth / size.x;
     const scaleY = maxHeight / size.y;
-    const scale = Math.min(scaleX, scaleY);
+    let scale = Math.min(scaleX, scaleY);
+    
+    // Güvenlik: scale NaN veya 0 olmamalı
+    if (!isFinite(scale) || scale <= 0) scale = 1;
 
-    // SVGLoader Y eksenini ters çevirdiği için Y scale negatif
-    logoGroup.scale.set(scale, -scale, scale);
+    // Y tersine çevrilir, Z KESİNLİKLE 1 kalır (kalınlık ezilmez)
+    logoGroup.scale.set(scale, -scale, 1);
     logoGroup.updateMatrixWorld(true);
 
-    // Yeni ölçeğe göre merkezleme
-    box = new THREE.Box3().setFromObject(logoGroup);
+    const scaledBox = new THREE.Box3().setFromObject(logoGroup);
     const center = new THREE.Vector3();
-    box.getCenter(center);
+    scaledBox.getCenter(center);
 
-    // Logoyu plakanın merkezine oturt ve Z ekseninde (kalınlık kadar) havaya kaldır
+    // X ve Y'yi ortala. Z'yi ise logonun alt tabanı tam plaka üstüne gelecek şekilde ayarla.
     logoGroup.position.x = -center.x;
     logoGroup.position.y = -center.y;
-    logoGroup.position.z = zPosition; // <= BURASI KRİTİK NOKTA. Logo plakanın tam üstünden başlar.
+    logoGroup.position.z = zPosition - scaledBox.min.z;
     
     logoGroup.updateMatrixWorld(true);
+    statusEl.textContent = "Hazır — modeli döndürerek inceleyebilirsin.";
 }
 
 svgFile.addEventListener("change", function(event) {
@@ -587,7 +600,7 @@ function centerProductXY() {
     
     productGroup.position.x = -center.x;
     productGroup.position.y = -center.y;
-    productGroup.position.z = 0; // Ürün grubu Z'de her zaman 0'da kalır.
+    productGroup.position.z = 0; 
 }
 
 brandSelect.addEventListener("change", function() {
